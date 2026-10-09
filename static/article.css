@@ -25,6 +25,19 @@ ul,
 ol {
   margin: 20px;
 }
+table {
+  margin: 20px;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 4px 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+th {
+  border-bottom: 2px solid #ccc;
+}
 
 h1,
 h2,

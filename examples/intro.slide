@@ -31,6 +31,17 @@ _italic_, **bold**, `code` and [links](https://go.dev/).
 
 : Lines starting with ": " are speaker notes for this slide.
 
+## Tables
+
+[GitHub-style tables](https://github.github.com/gfm/#tables-extension-) line up with `|`;
+colons in the separator row align the columns:
+
+| Command  | Shows                  | Runs |
+|----------|------------------------|:----:|
+| `.code`  | source from a file     |  no  |
+| `.play`  | source from a file     | yes  |
+| `.image` | a picture or a diagram |  no  |
+
 ## Code blocks and quotes
 
 Indented or fenced blocks are shown as code, without running anything:

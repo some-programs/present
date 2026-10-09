@@ -23,6 +23,11 @@ The source can be shown in pieces, with prose between them:
 
 .code code/pipeline/main.go /^func worker/,/^}/
 
+| Format  | File       | Layout                |
+|---------|------------|-----------------------|
+| slides  | `.slide`   | one section per slide |
+| article | `.article` | one long page         |
+
 ### A subsection
 
 Subsections start with `###` and nest inside a section.

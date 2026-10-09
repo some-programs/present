@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/yuin/goldmark/v2/ast"
+	"github.com/yuin/goldmark/v2/extension"
 	"github.com/yuin/goldmark/v2/parser"
 	"github.com/yuin/goldmark/v2/renderer/html"
 	"github.com/yuin/goldmark/v2/text"
@@ -618,10 +619,11 @@ func trimSpeakerNote(s string) string {
 }
 
 func renderMarkdown(input []byte) (template.HTML, error) {
-	doc := parser.New().Parse(input)
+	doc := parser.New(parser.WithExtensions(extension.TableParser)).Parse(input)
 	fixupMarkdown(doc)
 	var b strings.Builder
-	if err := html.New(html.WithUnsafe()).Render(&b, input, doc); err != nil {
+	r := html.New(html.WithUnsafe(), html.WithExtensions(extension.NewTableHTMLRenderer()))
+	if err := r.Render(&b, input, doc); err != nil {
 		return "", err
 	}
 	return template.HTML(b.String()), nil

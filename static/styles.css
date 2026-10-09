@@ -459,15 +459,16 @@ table {
   border-collapse: collapse;
   margin-top: 40px;
 }
+td,
+th {
+  border-bottom: 1px solid rgb(224, 224, 224);
+  padding: 5px 10px;
+  vertical-align: top;
+}
 th {
   font-weight: 600;
   text-align: left;
-}
-td,
-th {
-  border: 1px solid rgb(224, 224, 224);
-  padding: 5px 10px;
-  vertical-align: top;
+  border-bottom: 2px solid rgb(204, 204, 204);
 }
 
 p.link {

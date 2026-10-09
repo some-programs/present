@@ -84,7 +84,8 @@ Other than the commands, the text in a section is interpreted as Markdown.
 # Markdown Syntax
 
 Markdown typically means the generic name for a family of similar markup languages.
-The specific variant used in present is CommonMark.
+The specific variant used in present is CommonMark,
+with the tables of GitHub Flavored Markdown (https://github.github.com/gfm/#tables-extension-).
 See https://commonmark.org/help/tutorial/ for a quick tutorial.
 
 Section headings can end in {#name} to set the HTML anchor ID for the heading to "name".
@@ -135,6 +136,10 @@ Example:
 	_Why use scoped\_ptr_? Use plain **\*ptr** instead.
 
 	Visit [the Go home page](https://golang.org/).
+
+	| Column | Aligned right |
+	|--------|--------------:|
+	| cell   | cell          |
 
 # Command Invocations
 
