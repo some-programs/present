@@ -100,35 +100,31 @@ div#footer {
   padding: 0 20px;
 }
 
+/* Code boxes go on the div.code around .code and .play blocks and on the
+   div.output holding program output, not on the pre inside them. Markdown
+   code blocks are a bare pre and get the box themselves. */
 div.code,
-div.output {
-  margin: 0;
-}
-
-pre {
+div.output,
+pre:not(div.code pre, div.output pre) {
   margin: 20px 20px 20px 40px;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
   border-radius: 5px;
 }
 
-div.output pre {
-  padding: 10px;
-}
-
-pre {
+div.code,
+pre:not(div.code pre, div.output pre) {
   background: white;
 }
-div.output pre {
+div.output {
+  padding: 10px;
   background: black;
 }
-div.output .stdout pre {
+div.output .stdout {
   color: #e6e6e6;
 }
-div.output .stderr pre {
+div.output .stderr {
   color: rgb(244, 74, 63);
 }
-div.output .system pre {
+div.output .system {
   color: rgb(255, 209, 77);
 }
 

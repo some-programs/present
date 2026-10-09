@@ -242,7 +242,8 @@
     margin-bottom: 100px !important;
   }
 
-  pre {
+  div.code,
+  pre:not(div.code pre, div.output pre) {
     background: rgb(240, 240, 240);
   }
 
@@ -357,19 +358,9 @@ li {
   margin: 0 0 0.5em 0;
 }
 
-div.code, div.output {
+pre {
   margin: 0;
   padding: 0;
-}
-
-pre {
-  padding: 5px 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  overflow: hidden;
-
-  background: rgb(240, 240, 240);
-  border: 1px solid rgb(224, 224, 224);
 
   font-family: 'Roboto Mono', 'Courier New', monospace;
   font-size: 18px;
@@ -377,6 +368,21 @@ pre {
   letter-spacing: -1px;
 
   color: black;
+}
+
+/* The code box. It goes on the div.code around .code and .play blocks,
+   not on the pre inside, so that it also holds lines typed into an
+   editable block. Markdown code blocks are a bare pre and get the box
+   themselves. */
+div.code,
+pre:not(div.code pre, div.output pre) {
+  padding: 5px 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  overflow: hidden;
+
+  background: rgb(240, 240, 240);
+  border: 1px solid rgb(224, 224, 224);
 }
 
 pre.numbers span:before {
@@ -436,7 +442,8 @@ p.link {
 }
 
 /* Code */
-pre {
+div.code,
+div.code pre {
   outline: 0px solid transparent;
 }
 div.playground {
