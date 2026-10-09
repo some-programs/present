@@ -6,9 +6,12 @@
   <head>
     <title>{{.Title}}</title>
     <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width,height=device-height,initial-scale=1'>
+    <meta name='apple-mobile-web-app-capable' content='yes'>
     <link rel='preload' href='/static/fonts/roboto-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
     <link rel='preload' href='/static/fonts/robotomono-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
     <link rel='stylesheet' href='/static/fonts.css'>
+    <link rel='stylesheet' href='/static/styles.css'>
     <script>
       var notesEnabled = {{.NotesEnabled}};
     </script>
@@ -25,7 +28,7 @@
     {{end}}
   </head>
 
-  <body style='display: none'>
+  <body>
 
     <section class='slides layout-widescreen'>
 

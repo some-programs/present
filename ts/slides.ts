@@ -295,27 +295,12 @@ function addEventListeners() {
 
 /* Initialization */
 
-function addGeneralStyle() {
-  const style = document.createElement('link');
-  style.rel = 'stylesheet';
-  style.href = '/static/styles.css';
-  document.body.appendChild(style);
-
-  // Mark the copy of the slides in the presenter notes window, which
-  // shows the previous and next slide beside the current one.
+// markPresenterView marks the copy of the slides in the presenter notes
+// window, which shows the previous and next slide beside the current one.
+function markPresenterView() {
   if (window.frameElement?.id === 'presenter-slides') {
     document.documentElement.classList.add('presenter-view');
   }
-
-  const viewport = document.createElement('meta');
-  viewport.name = 'viewport';
-  viewport.content = 'width=device-width,height=device-height,initial-scale=1';
-  document.head.appendChild(viewport);
-
-  const appleCapable = document.createElement('meta');
-  appleCapable.name = 'apple-mobile-web-app-capable';
-  appleCapable.content = 'yes';
-  document.head.appendChild(appleCapable);
 }
 
 function handleDomLoaded() {
@@ -325,7 +310,7 @@ function handleDomLoaded() {
 
   setupFrames();
 
-  addGeneralStyle();
+  markPresenterView();
   addEventListeners();
 
   updateSlides();
