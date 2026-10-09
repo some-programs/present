@@ -7,10 +7,23 @@ var notesWindow = null;
 
 var isParentWindow = window.parent == window;
 
-// When parent window closes, clear storage and close child window
+// Keys shared by all presentations for syncing playground state with the
+// notes window. destSlideKey() adds a per-presentation key.
+var playStorageKeys = [
+  'play-index',
+  'play-action',
+  'play-code',
+  'output-style',
+  'play-shiftKey',
+];
+
+// When parent window closes, remove our storage keys and close child window
 if (isParentWindow) {
   window.onbeforeunload = function() {
-    localStorage.clear();
+    localStorage.removeItem(destSlideKey());
+    for (var i = 0; i < playStorageKeys.length; i++) {
+      localStorage.removeItem(playStorageKeys[i]);
+    }
     if (notesWindow) notesWindow.close();
   };
 }
