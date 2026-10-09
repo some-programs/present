@@ -57,7 +57,15 @@ Only the selected lines are shown, but the whole file is run:
 
 A [txtar](https://pkg.go.dev/golang.org/x/tools/txtar) archive holds several files; without a go.mod, one is made.
 
+.fontsize 0.9
+
 .play code/multi.txtar
+
+## Compile errors
+
+Only `main` is shown, but the errors' line numbers are those of the file, the one in `count` too:
+
+.play -numbers code/_broken/main.go /^func main/,/^}/
 
 ## Other languages
 

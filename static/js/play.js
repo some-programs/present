@@ -11,24 +11,34 @@ const maxWidth = 990;
 const minHeight = 27;
 const maxHeight = 608;
 // text returns the program text in node, skipping buttons and line numbers.
+// A DIV or PRE, such as a line added while editing, starts a new line unless
+// the text is already at the start of one; a BR is always a line break.
 function text(node) {
     let s = '';
-    for (const n of node.childNodes) {
-        if (n instanceof Element) {
-            if (n.tagName === 'BUTTON')
+    const walk = (node) => {
+        for (const n of node.childNodes) {
+            if (n instanceof Element) {
+                if (n.tagName === 'BUTTON')
+                    continue;
+                if (n.tagName === 'SPAN' && n.className === 'number')
+                    continue;
+                if (n.tagName === 'BR') {
+                    s += '\n';
+                }
+                else if ((n.tagName === 'DIV' || n.tagName === 'PRE') &&
+                    s !== '' &&
+                    !s.endsWith('\n')) {
+                    s += '\n';
+                }
+                walk(n);
                 continue;
-            if (n.tagName === 'SPAN' && n.className === 'number')
-                continue;
-            if (n.tagName === 'DIV' || n.tagName === 'BR' || n.tagName === 'PRE') {
-                s += '\n';
             }
-            s += text(n);
-            continue;
+            if (n.nodeType === Node.TEXT_NODE) {
+                s += n.nodeValue;
+            }
         }
-        if (n.nodeType === Node.TEXT_NODE) {
-            s += n.nodeValue;
-        }
-    }
+    };
+    walk(node);
     return s.replace(/ /g, ' '); // replace non-breaking spaces
 }
 function clamp(v, min, max) {

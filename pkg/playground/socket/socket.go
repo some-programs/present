@@ -10,6 +10,7 @@
 package socket // import "github.com/some-programs/present/pkg/playground/socket"
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"go/parser"
@@ -349,8 +350,11 @@ func (p *process) start(body string, opt *Options) error {
 	bin := filepath.Join(path, out)
 
 	// write body to x.go files
+	// The browser sends the code with a leading newline, so an archive
+	// that starts with a file header has a blank comment; it is not a
+	// program of its own.
 	a := txtar.Parse([]byte(body))
-	if len(a.Comment) != 0 {
+	if len(bytes.TrimSpace(a.Comment)) != 0 {
 		a.Files = append(a.Files, txtar.File{Name: "prog.go", Data: a.Comment})
 		a.Comment = nil
 	}

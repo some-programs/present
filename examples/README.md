@@ -12,7 +12,8 @@ notes.
   subsections, speaker notes, comments, `.link`, `.html` and `.iframe`.
 - [code.slide](code.slide): `.code` with addresses, `OMIT`, highlighting,
   `-numbers` and `-edit`, `.fontsize`, and `.play` with a Go program, a
-  multi-file program in a txtar archive and a shell script.
+  multi-file program in a txtar archive, a program that does not compile
+  and a shell script.
 - [media.slide](media.slide): `.image` sizes, `.caption`, Graphviz and
   Mermaid diagrams, `.background` and `.video`.
 - [notes.article](notes.article): the article format.

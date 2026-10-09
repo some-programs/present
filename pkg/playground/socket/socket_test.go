@@ -117,6 +117,27 @@ func main() { fmt.Print("mod") }
 module example.com/m
 `,
 		want: "mod",
+	}, {
+		name: "txtar without comment",
+		body: `
+-- go.mod --
+module example.com/m
+-- main.go --
+package main
+
+import (
+	"fmt"
+
+	"example.com/m/msg"
+)
+
+func main() { fmt.Print(msg.Hello) }
+-- msg/msg.go --
+package msg
+
+const Hello = "hello"
+`,
+		want: "hello",
 	}} {
 		t.Run(tt.name, func(t *testing.T) {
 			dest := make(chan *Message, 100)
