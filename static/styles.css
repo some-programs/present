@@ -406,6 +406,37 @@ article > .video {
   object-fit: contain;
 }
 
+/* Why an image could not be made from its Graphviz source. It takes the
+   image's place if there is no earlier rendering; otherwise the earlier
+   rendering is shown, and the error only in the presenter notes window. */
+.image-error {
+  margin-top: 40px;
+  padding: 5px 10px;
+
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  text-align: left;
+  text-shadow: none;
+
+  color: white;
+  background: rgb(190, 30, 30);
+}
+.image-error.stale {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+}
+.presenter-view .image-error.stale {
+  display: block;
+}
+
 article.background {
   background-size: contain;
   background-repeat: round;

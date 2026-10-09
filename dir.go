@@ -47,6 +47,9 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	} else if isDir {
 		return
 	}
+	// Have browsers check for a newer file on every load, such as an
+	// image that has been replaced while the slides are open.
+	w.Header().Set("Cache-Control", "no-cache")
 	http.FileServer(http.Dir(*contentPath)).ServeHTTP(w, r)
 }
 
@@ -121,6 +124,7 @@ func renderDoc(w io.Writer, docFile string) error {
 	if err != nil {
 		return err
 	}
+	renderDots(doc, docFile)
 
 	// Find which template should be executed.
 	tmpl := contentTemplate[filepath.Ext(docFile)]

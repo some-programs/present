@@ -302,15 +302,27 @@ image:
 
 The template uses the function "image" to inject picture files.
 
-The syntax is simple: 1 or 3 space-separated arguments.
-The first argument is always the file name.
-If there are more arguments, they are the height and width;
-both must be present, or substituted with an underscore.
-Replacing a dimension argument with the underscore parameter
-preserves the aspect ratio of the image when scaling.
+The first argument is always the file name. On slides, the image is
+fitted into the space left for it, below any text and above any caption,
+keeping its aspect ratio; with no other arguments it fills that space.
+A single further argument is a fraction from 0.0 to 1.0 of the slide's
+content area that the image may use. Two further arguments are the height
+and width, each a fraction, a number of pixels, or an underscore for no
+limit. The image never grows beyond the space left for it.
 
-	.image images/betsy.jpg 100 200
+	.image images/betsy.jpg
+	.image images/betsy.jpg 0.5
 	.image images/janet.jpg _ 300
+	.image images/janet.jpg 0.4 _
+
+A Graphviz file (.dot) is shown as the SVG file of the same name next to
+it. The present program renders it with dot whenever the .dot file has
+changed, and marks the SVG with a hash of the .dot file to tell. If dot is
+missing or fails, an earlier SVG is shown, and the error appears in the
+presenter notes window; without an earlier SVG, the error takes the
+image's place.
+
+	.image diagrams/flow.dot
 
 video:
 
