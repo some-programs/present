@@ -53,7 +53,8 @@ type Message struct {
 
 // Options specify additional message options.
 type Options struct {
-	Race bool // use -race flag when building code (for "run" only)
+	Race bool   // use -race flag when building code (for "run" only)
+	Ext  string // extension of the program's file, such as ".py"
 }
 
 // NewHandler returns a websocket server which checks the origin of requests.
@@ -169,7 +170,11 @@ func startProcess(id, body string, dest chan<- *Message, opt *Options) *process 
 		}
 	}()
 	var err error
-	if path, args := shebang(body); path != "" {
+	if opt != nil && opt.Ext == ".ts" && hasTSC() {
+		err = p.startTypeScript(body)
+	} else if interp := interpreter(opt); interp != nil {
+		err = p.startScript(interp, opt.Ext, body)
+	} else if path, args := shebang(body); path != "" {
 		err = p.startProcess(path, args, body)
 	} else {
 		err = p.start(body, opt)
@@ -327,6 +332,85 @@ func (p *process) startProcess(path string, args []string, body string) error {
 	}
 	p.run = cmd
 	return nil
+}
+
+// interpreters maps the extension of a program's file to the command that
+// runs it, given the file as its last argument.
+var interpreters = map[string][]string{
+	".py": {"python3", "-u"}, // unbuffered, so that output streams
+	".js": {"node"},
+	".ts": {"node"}, // Node strips the types itself; see startTypeScript
+}
+
+// interpreter returns the command that runs a program with the extension in
+// opt, or nil if it is not run by an interpreter.
+func interpreter(opt *Options) []string {
+	if opt == nil {
+		return nil
+	}
+	return interpreters[opt.Ext]
+}
+
+// startScript writes the given program to a file with extension ext and
+// starts the interpreter interp on it.
+func (p *process) startScript(interp []string, ext, body string) error {
+	prog, err := p.writeProg("prog"+ext, body)
+	if err != nil {
+		return err
+	}
+	cmd := p.cmd("", append(slices.Clone(interp), prog)...)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	p.run = cmd
+	return nil
+}
+
+// hasTSC reports whether the TypeScript compiler is installed.
+func hasTSC() bool {
+	_, err := exec.LookPath("tsc")
+	return err == nil
+}
+
+// startTypeScript type checks the given TypeScript program and compiles it
+// with tsc, then starts node on the result. A type error stops the program
+// from running, like a Go compile error. The source map makes node report
+// runtime errors at their lines in the TypeScript.
+func (p *process) startTypeScript(body string) error {
+	prog, err := p.writeProg("prog.ts", body)
+	if err != nil {
+		return err
+	}
+	cmd := p.cmd(p.path, "tsc", "--strict", "--target", "es2022",
+		"--module", "esnext", "--moduleResolution", "bundler",
+		"--sourceMap", "--noEmitOnError", "prog.ts")
+	cmd.Stdout = cmd.Stderr // send compiler output to stderr
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd = p.cmd("", "node", "--enable-source-maps", strings.TrimSuffix(prog, ".ts")+".js")
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	p.run = cmd
+	return nil
+}
+
+// writeProg writes body to the named file in a new temporary directory,
+// which p.end removes, and returns the file's path.
+func (p *process) writeProg(name, body string) (string, error) {
+	path, err := os.MkdirTemp("", "present-")
+	if err != nil {
+		return "", err
+	}
+	p.path = path // to be removed by p.end
+
+	prog := filepath.Join(path, name)
+	if err := os.WriteFile(prog, []byte(body), 0o666); err != nil {
+		return "", err
+	}
+	return prog, nil
 }
 
 // start builds and starts the given program, sending its output to p.out,

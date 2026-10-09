@@ -555,15 +555,20 @@ div.output .system,
 div.output .exit {
   color: rgb(255, 230, 120);
 }
+/* The Run button after a code box, moved up into its bottom right corner.
+   The float has no height so that it takes no room: otherwise it would
+   narrow the code box of a .play block that follows. */
 .buttons {
   position: relative;
   float: right;
+  height: 0;
   top: -60px;
   right: 10px;
 }
 div.output .buttons {
   position: absolute;
   float: none;
+  height: auto;
   top: auto;
   right: 5px;
   bottom: 5px;

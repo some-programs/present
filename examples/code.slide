@@ -67,6 +67,20 @@ Only `main` is shown, but the errors' line numbers are those of the file, the on
 
 .play -numbers code/_broken/main.go /^func main/,/^}/
 
+## Running Python
+
+A `.py` file runs with `python3`:
+
+.play -edit code/primes.py /^print/
+
+## Running JavaScript and TypeScript
+
+`.js` files run with `node`, `.ts` files too once `tsc` has checked and compiled them:
+
+.play code/fizzbuzz.js
+
+.play code/shapes.ts /^function area/,/^}/
+
 ## Other languages
 
 A program starting with `#!` runs with that interpreter:

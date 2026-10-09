@@ -208,7 +208,7 @@ This command shows test.go with line numbers:
 
 play:
 
-The function "play" is the same as "code" but puts a button on the displayed source so the program can be run from the browser. Although only the selected text is shown, all the source is included in the HTML output so it can be presented to the compiler.
+The function "play" is the same as "code" but puts a button on the displayed source so the program can be run from the browser. Although only the selected text is shown, all the source is included in the HTML output so it can be presented to the compiler. A file whose name ends in .py is run with python3, and one ending in .js with node. One ending in .ts is type checked and compiled with tsc and then run with node; without tsc, node runs it by stripping its types. A program that starts with "#!" is run with that interpreter; anything else is built and run as Go.
 
 link:
 

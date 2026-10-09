@@ -5,7 +5,9 @@
 package socket
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -159,6 +161,87 @@ const Hello = "hello"
 			}
 			if got := stdout.String(); got != tt.want {
 				t.Errorf("stdout = %q, want %q (stderr: %q)", got, tt.want, stderr.String())
+			}
+		})
+	}
+}
+
+func TestStartScript(t *testing.T) {
+	for _, tt := range []struct {
+		name, ext, body, want, wantErr string
+		noTSC                          bool // run without tsc in PATH
+	}{{
+		name:    "python",
+		ext:     ".py",
+		body:    "import sys\nprint('hello')\nsys.exit(1 / 0)\n",
+		want:    "hello\n",
+		wantErr: "line 3",
+	}, {
+		name:    "javascript",
+		ext:     ".js",
+		body:    "import { EOL } from 'node:os';\nprocess.stdout.write('hello' + EOL);\nthrow new Error('boom');\n",
+		want:    "hello\n",
+		wantErr: "prog.js:3",
+	}, {
+		name:    "typescript",
+		ext:     ".ts",
+		body:    "enum E { A, B }\nconsole.log('hello', E.B);\nthrow new Error('boom');\n",
+		want:    "hello 1\n",
+		wantErr: "prog.ts:3",
+	}, {
+		name:    "typescript type error",
+		ext:     ".ts",
+		body:    "console.log('hello');\nconst s: string = 1;\n",
+		wantErr: "prog.ts(2,7): error TS2322",
+	}, {
+		name:    "typescript without tsc",
+		ext:     ".ts",
+		body:    "const s: string = 'hello';\nconsole.log(s);\nthrow new Error('boom');\n",
+		want:    "hello\n",
+		wantErr: "prog.ts:3",
+		noTSC:   true,
+	}} {
+		t.Run(tt.name, func(t *testing.T) {
+			opt := &Options{Ext: tt.ext}
+			interp, err := exec.LookPath(interpreter(opt)[0])
+			if err != nil {
+				t.Skip(err)
+			}
+			switch {
+			case tt.noTSC:
+				// Leave only the interpreter in PATH.
+				dir := t.TempDir()
+				if err := os.Symlink(interp, filepath.Join(dir, filepath.Base(interp))); err != nil {
+					t.Fatal(err)
+				}
+				t.Setenv("PATH", dir)
+			case tt.ext == ".ts" && !hasTSC():
+				t.Skip("tsc not found")
+			}
+			dest := make(chan *Message, 100)
+			startProcess("id", tt.body, dest, opt)
+			var stdout, stderr strings.Builder
+			var end string
+			for m := range dest {
+				switch m.Kind {
+				case "stdout":
+					stdout.WriteString(m.Body)
+				case "stderr":
+					stderr.WriteString(m.Body)
+				}
+				if m.Kind == "end" {
+					end = m.Body
+					break
+				}
+			}
+			if got := stdout.String(); got != tt.want {
+				t.Errorf("stdout = %q, want %q", got, tt.want)
+			}
+			if end == "" {
+				t.Errorf("end: no error, want one")
+			}
+			if !strings.Contains(stderr.String(), tt.wantErr) {
+				t.Errorf("stderr = %q, want it to contain %q", stderr.String(), tt.wantErr)
 			}
 		})
 	}

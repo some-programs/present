@@ -181,6 +181,10 @@ function unfit(el: HTMLElement) {
   }
 }
 
+// closeOpen closes the playground whose output panel is open, if any, so
+// that running one playground closes the output of another.
+let closeOpen: (() => void) | undefined;
+
 function button(className: string, label: string, onClick: PlayHandler) {
   const b = document.createElement('button');
   b.className = className;
@@ -207,9 +211,23 @@ function init(transport: Transport, code: HTMLElement, index: number) {
     if (notesEnabled) updatePlayStorage('onKill', index);
   };
 
+  // close kills the program and hides the output panel. Unlike onClose, it
+  // is not mirrored to the notes window: closing another playground's
+  // panel happens in each window when the run is mirrored.
+  const close = () => {
+    running?.Kill();
+    clearTimeout(showTimer);
+    output.style.visibility = '';
+    output.style.display = 'none';
+    run1.style.display = 'inline-block';
+    if (closeOpen === close) closeOpen = undefined;
+  };
+
   const onRun: PlayHandler = (e) => {
     const race =
       !!e?.shiftKey || localStorage.getItem('play-shiftKey') === 'true';
+    if (closeOpen !== close) closeOpen?.();
+    closeOpen = close;
     running?.Kill();
     clearTimeout(showTimer);
     // The panel is fitted to each run's output. A closed panel stays hidden
@@ -237,16 +255,15 @@ function init(transport: Transport, code: HTMLElement, index: number) {
       write(w);
       if (autoFit()) fit(output, outpre);
     };
-    running = transport.Run(text(code), output1, { Race: race });
+    running = transport.Run(text(code), output1, {
+      Race: race,
+      Ext: code.dataset.ext ?? '',
+    });
     if (notesEnabled) updatePlayStorage('onRun', index, e);
   };
 
   const onClose: PlayHandler = () => {
-    running?.Kill();
-    clearTimeout(showTimer);
-    output.style.visibility = '';
-    output.style.display = 'none';
-    run1.style.display = 'inline-block';
+    close();
     if (notesEnabled) updatePlayStorage('onClose', index);
   };
 

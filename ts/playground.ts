@@ -16,6 +16,7 @@ export type OutputFunc = (write: Write) => void;
 
 export interface RunOptions {
   Race: boolean;
+  Ext: string; // extension of the program's file, such as ".py"
 }
 
 export interface Running {
