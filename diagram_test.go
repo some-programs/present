@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestRenderDot(t *testing.T) {
+func TestRenderDiagram(t *testing.T) {
 	dir := t.TempDir()
 
 	// A stand-in for dot that wraps its input in an svg element, fails on
@@ -36,16 +36,16 @@ printf '<svg>%s</svg>\n' "$(cat "$2")"
 	}
 	check := func(wantErr bool, wantSVG string, wantRuns int) {
 		t.Helper()
-		svg, err := renderDot(src, out)
+		svg, err := renderDiagram(src, out)
 		if (err != nil) != wantErr {
-			t.Errorf("renderDot error = %v, want error %v", err, wantErr)
+			t.Errorf("renderDiagram error = %v, want error %v", err, wantErr)
 		}
 		got, _ := os.ReadFile(out)
 		if !strings.HasPrefix(string(got), wantSVG) {
 			t.Errorf("g.svg = %q, want it to start with %q", got, wantSVG)
 		}
 		if string(svg) != string(got) {
-			t.Errorf("renderDot returned %q, want the contents of g.svg, %q", svg, got)
+			t.Errorf("renderDiagram returned %q, want the contents of g.svg, %q", svg, got)
 		}
 		n, _ := os.ReadFile(runs)
 		if got := strings.Count(string(n), "run"); got != wantRuns {
@@ -73,7 +73,11 @@ printf '<svg>%s</svg>\n' "$(cat "$2")"
 	write(src, "digraph { c }")
 	check(true, "<svg>digraph { b }</svg>", 3)
 
-	// With rendering turned off, any earlier rendering is used as it is.
+	// With automatic rendering turned off, any earlier rendering is used as it is.
+	*dotCmd = fake
+	*noRender = true
+	check(false, "<svg>digraph { b }</svg>", 3)
+	*noRender = false
 	*dotCmd = ""
 	check(false, "<svg>digraph { b }</svg>", 3)
 	os.Remove(out)
@@ -81,5 +85,49 @@ printf '<svg>%s</svg>\n' "$(cat "$2")"
 
 	if leftovers, _ := filepath.Glob(filepath.Join(dir, ".g.svg.*")); len(leftovers) > 0 {
 		t.Errorf("temporary files left: %v", leftovers)
+	}
+}
+
+func TestRenderMermaid(t *testing.T) {
+	dir := t.TempDir()
+
+	// A stand-in for mmdc that wraps its input in an svg element, and
+	// fails like mmdc, with a stack trace, on input containing "bad".
+	fake := filepath.Join(dir, "fakemmdc")
+	script := `#!/bin/sh
+[ "$*" = "--quiet --input g.mmd --output - --outputFormat svg" ] || { echo "bad arguments: $*" >&2; exit 2; }
+if grep -q bad g.mmd; then
+	printf 'Error: Parse error on line 1:\nbad\n---^\nParser.parse (https://x.invalid/chunk.mjs:1633:16)\n    at async renderMermaid (file:///x/index.js:689:22)\n' >&2
+	exit 1
+fi
+printf '<svg>%s</svg>\n' "$(cat g.mmd)"
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := *mmdcCmd
+	*mmdcCmd = fake
+	t.Cleanup(func() { *mmdcCmd = old })
+
+	src := filepath.Join(dir, "g.mmd")
+	out := filepath.Join(dir, "g.svg")
+	if err := os.WriteFile(src, []byte("graph TD"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	svg, err := renderDiagram(src, out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "<svg>graph TD</svg>\n<!-- present: mmdc sha256:"; !strings.HasPrefix(string(svg), want) {
+		t.Errorf("renderDiagram = %q, want it to start with %q", svg, want)
+	}
+
+	if err := os.WriteFile(src, []byte("bad"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = renderDiagram(src, out)
+	want := src + ": Error: Parse error on line 1:\nbad\n---^"
+	if err == nil || err.Error() != want {
+		t.Errorf("renderDiagram error = %v, want %q", err, want)
 	}
 }

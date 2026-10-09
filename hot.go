@@ -118,7 +118,7 @@ func sectionFiles(files []string, dir string, s present.Section) []string {
 		case present.Section:
 			files = sectionFiles(files, dir, e)
 		case present.Image:
-			// The SVG made from a Graphviz file changes only with it.
+			// The SVG made from a diagram file changes only with it.
 			if e.Source != "" {
 				files = appendURLFile(files, dir, e.Source)
 			} else {

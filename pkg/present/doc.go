@@ -315,14 +315,16 @@ limit. The image never grows beyond the space left for it.
 	.image images/janet.jpg _ 300
 	.image images/janet.jpg 0.4 _
 
-A Graphviz file (.dot) is shown as the SVG file of the same name next to
-it. The present program renders it with dot whenever the .dot file has
-changed, and marks the SVG with a hash of the .dot file to tell. If dot is
-missing or fails, an earlier SVG is shown, and the error appears in the
-presenter notes window; without an earlier SVG, the error takes the
-image's place.
+A diagram file is shown as the SVG file of the same name next to it: a
+Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or
+.mermaid), rendered with the Mermaid CLI, mmdc. The present program
+renders it whenever the diagram file has changed, and marks the SVG with a
+hash of the diagram file to tell. If the tool is missing or fails, an
+earlier SVG is shown, and the error appears in the presenter notes window;
+without an earlier SVG, the error takes the image's place.
 
 	.image diagrams/flow.dot
+	.image diagrams/sequence.mmd
 
 video:
 

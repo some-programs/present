@@ -6,6 +6,8 @@ package present
 
 import (
 	"fmt"
+	"path"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -23,8 +25,9 @@ func init() {
 // the width and the height. Slides fit each image into the space left for
 // it, keeping its aspect ratio; with no size it fills that space.
 //
-// A Graphviz file (.dot) is shown as the SVG file next to it with the same
-// name, which the program serving the slides keeps up to date.
+// A diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), is shown as
+// the SVG file next to it with the same name, which the program serving the
+// slides keeps up to date.
 type Image struct {
 	Cmd    string // original command from present source
 	URL    string
@@ -34,7 +37,7 @@ type Image struct {
 	WidthFrac  float64
 	HeightFrac float64
 
-	// Source is the Graphviz file that URL is made from, if any.
+	// Source is the diagram file that URL is made from, if any.
 	Source string
 
 	// Error says why URL could not be made from Source. Missing reports
@@ -42,6 +45,10 @@ type Image struct {
 	Error   string
 	Missing bool
 }
+
+// diagramExts are the extensions of the diagram files that an image can be
+// made from.
+var diagramExts = []string{".dot", ".mmd", ".mermaid"}
 
 func (i Image) PresentCmd() string   { return i.Cmd }
 func (i Image) TemplateName() string { return "image" }
@@ -52,9 +59,9 @@ func parseImage(_ *Context, fileName string, lineno int, text string) (Elem, err
 		return nil, fmt.Errorf("incorrect image invocation: %q", text)
 	}
 	img := Image{Cmd: text, URL: args[1]}
-	if base, ok := strings.CutSuffix(img.URL, ".dot"); ok && !strings.Contains(img.URL, "://") {
+	if ext := path.Ext(img.URL); slices.Contains(diagramExts, ext) && !strings.Contains(img.URL, "://") {
 		img.Source = img.URL
-		img.URL = base + ".svg"
+		img.URL = strings.TrimSuffix(img.URL, ext) + ".svg"
 	}
 	var err error
 	switch len(args) {

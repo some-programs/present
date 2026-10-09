@@ -406,7 +406,7 @@ article > .video {
   object-fit: contain;
 }
 
-/* Why an image could not be made from its Graphviz source. It takes the
+/* Why an image could not be made from its diagram source. It takes the
    image's place if there is no earlier rendering; otherwise the earlier
    rendering is shown, and the error only in the presenter notes window. */
 .image-error {

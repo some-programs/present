@@ -125,7 +125,7 @@ func renderDoc(w io.Writer, docFile string) error {
 	if err != nil {
 		return err
 	}
-	renderDots(doc, docFile)
+	renderDiagrams(doc, docFile)
 
 	// Find which template should be executed.
 	tmpl := contentTemplate[filepath.Ext(docFile)]

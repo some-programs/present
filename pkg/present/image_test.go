@@ -15,6 +15,8 @@ func TestParseImage(t *testing.T) {
 		{".image a.png 400 1.0", Image{URL: "a.png", Height: 400, WidthFrac: 1}},
 		{".image g/a.dot 0.5", Image{URL: "g/a.svg", Source: "g/a.dot", WidthFrac: 0.5, HeightFrac: 0.5}},
 		{".image https://example.com/a.dot", Image{URL: "https://example.com/a.dot"}},
+		{".image a.mmd", Image{URL: "a.svg", Source: "a.mmd"}},
+		{".image g.v1/a.mermaid _ 0.5", Image{URL: "g.v1/a.svg", Source: "g.v1/a.mermaid", WidthFrac: 0.5}},
 	}
 	for _, tt := range tests {
 		elem, err := parseImage(nil, "x.slide", 1, tt.cmd)
