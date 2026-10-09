@@ -66,7 +66,7 @@ type Options struct {
 // NewHandler returns a websocket server which checks the origin of requests.
 func NewHandler(origin *url.URL) websocket.Server {
 	return websocket.Server{
-		Config:    websocket.Config{Origin: origin},
+		Origin:    origin,
 		Handshake: handshake,
 		Handler:   websocket.Handler(socketHandler),
 	}

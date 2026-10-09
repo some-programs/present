@@ -23,7 +23,7 @@ import (
 // file system return an ErrModified error.
 func FS(a *Archive) (fs.FS, error) {
 	// Create a filesystem with a root directory.
-	root := &node{fileinfo: fileinfo{path: ".", mode: readOnlyDir}}
+	root := &node{path: ".", mode: readOnlyDir}
 	fsys := &filesystem{a, map[string]*node{root.path: root}}
 
 	if err := initFiles(fsys); err != nil {
@@ -75,7 +75,7 @@ func initFiles(fsys *filesystem) error {
 			return fmt.Errorf("file %q is an invalid path", name)
 		}
 
-		n := &node{idx: idx, fileinfo: fileinfo{path: name, size: len(file.Data), mode: readOnly}}
+		n := &node{idx: idx, path: name, size: len(file.Data), mode: readOnly}
 		if err := insert(fsys, n); err != nil {
 			return err
 		}
@@ -106,7 +106,7 @@ func directory(fsys *filesystem, dir string) (*node, error) {
 		return m, nil // pre-existing directory
 	}
 
-	n := &node{fileinfo: fileinfo{path: dir, mode: readOnlyDir}}
+	n := &node{path: dir, mode: readOnlyDir}
 	if err := insert(fsys, n); err != nil {
 		return nil, err
 	}
