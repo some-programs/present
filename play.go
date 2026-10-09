@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -14,21 +13,14 @@ import (
 
 	"github.com/some-programs/present/pkg/playground/socket"
 	"github.com/some-programs/present/pkg/present"
-
-	// This will register a handler at /compile that will proxy to the
-	// respective endpoints at play.golang.org. This allows the frontend to call
-	// these endpoints without needing cross-origin request sharing (CORS).
-	// Note that this is imported regardless of whether the endpoints are used or
-	// not (in the case of a local socket connection, they are not called).
-	_ "github.com/some-programs/present/pkg/playground"
 )
 
 var scripts = []string{"jquery.js", "jquery-ui.js", "playground.js", "play.js"}
 
 // playScript registers an HTTP handler at /play.js that serves all the
 // scripts specified by the variable above, and appends a line that
-// initializes the playground with the specified transport.
-func playScript(fsys fs.FS, transport string) {
+// initializes the playground with the WebSocket transport.
+func playScript(fsys fs.FS) {
 	modTime := time.Now()
 	var buf bytes.Buffer
 	for _, p := range scripts {
@@ -38,7 +30,7 @@ func playScript(fsys fs.FS, transport string) {
 		}
 		buf.Write(b)
 	}
-	fmt.Fprintf(&buf, "\ninitPlayground(new %v());\n", transport)
+	buf.WriteString("\ninitPlayground(new SocketTransport());\n")
 	b := buf.Bytes()
 	http.HandleFunc("/play.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/javascript")
@@ -50,22 +42,10 @@ func initPlayground(fsys fs.FS, origin *url.URL) {
 	if !present.PlayEnabled {
 		return
 	}
-	if *usePlayground {
-		playScript(fsys, "HTTPTransport")
-		return
-	}
-
-	playScript(fsys, "SocketTransport")
+	playScript(fsys)
 	http.Handle("/socket", socket.NewHandler(origin))
 }
 
 func playable(c present.Code) bool {
-	play := present.PlayEnabled && c.Play
-
-	// Restrict playable files to only Go source files when using play.golang.org,
-	// since there is no method to execute shell scripts there.
-	if *usePlayground {
-		return play && c.Ext == ".go"
-	}
-	return play
+	return present.PlayEnabled && c.Play
 }
