@@ -379,6 +379,19 @@ func (p *process) start(body string, opt *Options) error {
 		}
 	}
 
+	// A snippet without its own go.mod becomes a module of its own, at
+	// the language version of the installed go command.
+	if !hasModfile {
+		cmd := p.cmd(path, "go", "mod", "init", "prog")
+		cmd.Stdout, cmd.Stderr = nil, nil
+		if out, err := cmd.CombinedOutput(); err != nil {
+			if len(out) == 0 {
+				return err
+			}
+			return errors.New(strings.TrimSpace(string(out)))
+		}
+	}
+
 	// build x.go, creating x
 	args := []string{"go", "build", "-tags", "OMIT"}
 	if opt != nil && opt.Race {
@@ -390,9 +403,6 @@ func (p *process) start(body string, opt *Options) error {
 	}
 	args = append(args, "-o", bin)
 	cmd := p.cmd(path, args...)
-	if !hasModfile {
-		cmd.Env = append(cmd.Env, "GO111MODULE=off")
-	}
 	cmd.Stdout = cmd.Stderr // send compiler output to stderr
 	if err := cmd.Run(); err != nil {
 		return err

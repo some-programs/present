@@ -5,6 +5,8 @@
 package socket
 
 import (
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 )
@@ -70,4 +72,73 @@ func TestLimiter(t *testing.T) {
 		t.Errorf("received %v messages, want %v", n, msgLimit+1)
 	}
 	<-kr
+}
+
+func TestStartProcess(t *testing.T) {
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skip("go command not found")
+	}
+	for _, tt := range []struct {
+		name, body, want string
+	}{{
+		name: "plain",
+		body: `package main
+
+import "fmt"
+
+func main() {
+	for i := range 3 {
+		fmt.Print(i)
+	}
+}
+`,
+		want: "012",
+	}, {
+		name: "txtar",
+		body: `package main
+
+import "fmt"
+
+func main() { fmt.Print(msg) }
+-- msg.go --
+package main
+
+const msg = "hello"
+`,
+		want: "hello",
+	}, {
+		name: "go.mod",
+		body: `package main
+
+import "fmt"
+
+func main() { fmt.Print("mod") }
+-- go.mod --
+module example.com/m
+`,
+		want: "mod",
+	}} {
+		t.Run(tt.name, func(t *testing.T) {
+			dest := make(chan *Message, 100)
+			startProcess("id", tt.body, dest, nil)
+			var stdout, stderr strings.Builder
+			for m := range dest {
+				switch m.Kind {
+				case "stdout":
+					stdout.WriteString(m.Body)
+				case "stderr":
+					stderr.WriteString(m.Body)
+				}
+				if m.Kind == "end" {
+					if m.Body != "" {
+						t.Fatalf("end: %s\nstderr: %s", m.Body, stderr.String())
+					}
+					break
+				}
+			}
+			if got := stdout.String(); got != tt.want {
+				t.Errorf("stdout = %q, want %q (stderr: %q)", got, tt.want, stderr.String())
+			}
+		})
+	}
 }

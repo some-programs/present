@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/some-programs/present/pkg/present"
@@ -149,36 +148,32 @@ func parse(name string, mode present.ParseMode) (*present.Doc, error) {
 // If the given path is not a directory, it returns (isDir == false, err == nil)
 // and writes nothing to w.
 func dirList(w io.Writer, name string) (isDir bool, err error) {
-	f, err := os.Open(name)
+	fi, err := os.Stat(name)
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return false, err
-	}
-	if isDir = fi.IsDir(); !isDir {
+	if !fi.IsDir() {
 		return false, nil
 	}
-	fis, err := f.Readdir(0)
+	// The entries are sorted by name, and so is each list built from them.
+	entries, err := os.ReadDir(name)
 	if err != nil {
 		return false, err
 	}
 	strippedPath := strings.TrimPrefix(name, filepath.Clean(*contentPath))
 	strippedPath = strings.TrimPrefix(strippedPath, "/")
 	d := &dirListData{Path: strippedPath}
-	for _, fi := range fis {
+	for _, de := range entries {
 		e := dirEntry{
-			Name: fi.Name(),
-			Path: filepath.ToSlash(filepath.Join(strippedPath, fi.Name())),
+			Name: de.Name(),
+			Path: filepath.ToSlash(filepath.Join(strippedPath, de.Name())),
 		}
-		if fi.IsDir() && showDir(e.Name) {
+		if de.IsDir() && showDir(e.Name) {
 			d.Dirs = append(d.Dirs, e)
 			continue
 		}
 		if isDoc(e.Name) {
-			fn := filepath.ToSlash(filepath.Join(name, fi.Name()))
+			fn := filepath.ToSlash(filepath.Join(name, de.Name()))
 			if p, err := parse(fn, present.TitlesOnly); err != nil {
 				log.Printf("parse(%q, present.TitlesOnly): %v", fn, err)
 			} else {
@@ -197,10 +192,6 @@ func dirList(w io.Writer, name string) (isDir bool, err error) {
 	if d.Path == "." {
 		d.Path = ""
 	}
-	sort.Sort(d.Dirs)
-	sort.Sort(d.Slides)
-	sort.Sort(d.Articles)
-	sort.Sort(d.Other)
 	return true, dirListTemplate.Execute(w, d)
 }
 
@@ -218,23 +209,14 @@ func showFile(n string) bool {
 
 // showDir reports whether the given directory should be displayed in the list.
 func showDir(n string) bool {
-	if len(n) > 0 && (n[0] == '.' || n[0] == '_') || n == "present" {
-		return false
-	}
-	return true
+	return !strings.HasPrefix(n, ".") && !strings.HasPrefix(n, "_")
 }
 
 type dirListData struct {
 	Path                          string
-	Dirs, Slides, Articles, Other dirEntrySlice
+	Dirs, Slides, Articles, Other []dirEntry
 }
 
 type dirEntry struct {
 	Name, Path, Title string
 }
-
-type dirEntrySlice []dirEntry
-
-func (s dirEntrySlice) Len() int           { return len(s) }
-func (s dirEntrySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s dirEntrySlice) Less(i, j int) bool { return s[i].Name < s[j].Name }
