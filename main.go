@@ -33,6 +33,9 @@ func main() {
 	flag.BoolVar(&present.PlayEnabled, "play", true, "enable playground (permit execution of arbitrary user code)")
 	flag.BoolVar(&present.NotesEnabled, "notes", false, "enable presenter notes (press 'N' from the browser to display them)")
 	flag.Parse()
+	if *hot && present.NotesEnabled {
+		log.Fatal("-hot and -notes cannot be used together")
+	}
 
 	var fsys fs.FS = embedFS
 	if *basePath != "" {
@@ -78,6 +81,7 @@ func main() {
 	}
 
 	initPlayground(origin)
+	initHot()
 	http.Handle("/static/", http.FileServer(http.FS(fsys)))
 
 	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {

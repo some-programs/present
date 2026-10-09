@@ -111,6 +111,9 @@ type Section struct {
 	Notes   []string
 	Classes []string
 	Styles  []string
+
+	// Background is the image of a .background command, if any.
+	Background string
 }
 
 // HTMLAttributes for the section
@@ -461,6 +464,7 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 					if len(args) != 2 {
 						return nil, fmt.Errorf("%s:%d: .background expects exactly one argument", name, lines.line)
 					}
+					section.Background = args[1]
 					section.Classes = append(section.Classes, "background")
 					section.Styles = append(section.Styles, "background-image: url('"+args[1]+"')")
 					break

@@ -104,6 +104,7 @@ func initTemplates(fsys fs.FS) error {
 		tmpl = tmpl.Funcs(template.FuncMap{
 			"playable": playable,
 			"thankYou": func() bool { return *thankYou },
+			"hot":      func() bool { return *hot },
 		})
 		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
 			return err

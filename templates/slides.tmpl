@@ -12,6 +12,9 @@
     <script>
       var notesEnabled = {{.NotesEnabled}};
     </script>
+    {{if hot}}
+    <script type='module' src='/static/js/hot.js'></script>
+    {{end}}
     <script type='module' src='/static/js/slides.js'></script>
 
     {{if .NotesEnabled}}

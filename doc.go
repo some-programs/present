@@ -12,6 +12,11 @@ Programs in .play blocks are built and run on the machine running present,
 and their output is streamed to the browser over a WebSocket. Run with
 -play=false to disable this.
 
+With -hot, an open presentation reloads in the browser whenever its file, or
+a file it uses, changes. It opens at the first slide that changed, and a
+presentation that no longer parses shows its error over the old slides.
+-hot cannot be used with -notes.
+
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:
 
