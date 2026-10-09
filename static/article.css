@@ -173,7 +173,8 @@ ul.toc-inner a {
 
 @media print {
   .no-print,
-  .no-print * {
+  .no-print *,
+  .buttons {
     display: none !important;
   }
 }

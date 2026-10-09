@@ -212,7 +212,8 @@
   }
 
   .no-print,
-  .no-print * {
+  .no-print *,
+  .buttons {
     display: none !important;
   }
 }
