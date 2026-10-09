@@ -42,9 +42,60 @@ export function toggleNotesWindow() {
     if (notesWindow) {
         notesWindow.close();
         notesWindow = null;
+        stopTimer();
         return;
     }
     openNotesWindow();
+}
+/* Timer */
+// The notes window shows how long the current slide has been showing and
+// how long the notes window has been open.
+let timerInterval;
+let timerSlide = NaN;
+let slideStart = 0;
+let notesStart = 0;
+// formatDuration formats ms as m:ss, or h:mm:ss from one hour on.
+function formatDuration(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor(s / 60) % 60;
+    const ss = String(s % 60).padStart(2, '0');
+    if (h > 0)
+        return h + ':' + String(m).padStart(2, '0') + ':' + ss;
+    return m + ':' + ss;
+}
+function startTimer() {
+    notesStart = slideStart = Date.now();
+    timerSlide = storedSlide();
+    window.clearInterval(timerInterval);
+    timerInterval = window.setInterval(updateTimer, 500);
+    updateTimer();
+}
+function stopTimer() {
+    window.clearInterval(timerInterval);
+    timerInterval = undefined;
+}
+function updateTimer() {
+    if (!notesWindow || notesWindow.closed) {
+        // The presenter closed the notes window.
+        notesWindow = null;
+        stopTimer();
+        return;
+    }
+    const now = Date.now();
+    const slide = storedSlide();
+    if (!Object.is(slide, timerSlide)) {
+        timerSlide = slide;
+        slideStart = now;
+    }
+    const el = notesWindow.document.getElementById('timer');
+    if (!el)
+        return;
+    el.textContent =
+        'slide ' +
+            formatDuration(now - slideStart) +
+            ' · total ' +
+            formatDuration(now - notesStart);
 }
 // destSlideKey returns the storage key holding the current slide, unique to
 // this presentation so that different presentations don't mix.
@@ -79,6 +130,9 @@ function openNotesWindow() {
     notes.id = 'presenter-notes';
     notes.innerHTML = notesFor(storedSlide());
     w.document.body.appendChild(notes);
+    const timer = w.document.createElement('div');
+    timer.id = 'timer';
+    w.document.body.appendChild(timer);
     w.document.close();
     const style = w.document.createElement('link');
     style.rel = 'stylesheet';
@@ -86,6 +140,7 @@ function openNotesWindow() {
     w.document.head.appendChild(style);
     // Update the notes when the parent window changes slides.
     w.addEventListener('storage', updateNotes, false);
+    startTimer();
 }
 // notesFor returns the notes of the given slide as HTML. Slide 0 is the
 // title slide.

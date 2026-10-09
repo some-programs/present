@@ -32,3 +32,14 @@ p {
   position: fixed;
   top: 706px;
 }
+
+#timer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
