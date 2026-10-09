@@ -40,7 +40,38 @@
 
     position: absolute;
 
-    -webkit-transform: translate3d(0, 0, 0);
+    /* The slide size, and the margin around it at the closest window
+       edges. */
+    --slide-width: 900px;
+    --slide-height: 700px;
+    --slide-margin: 20px;
+
+    /* Scale window */
+    --slide-scale: min(
+      tan(atan2(100dvw, var(--slide-width) + 2 * var(--slide-margin))),
+      tan(atan2(100dvh, var(--slide-height) + 2 * var(--slide-margin)))
+    );
+    transform: scale(var(--slide-scale));
+
+    /* Half the window width, in unscaled slide pixels. */
+    --half-window: calc(50dvw / var(--slide-scale));
+
+    /* The distance between slide centres. It puts the previous and next
+       slide just outside the window, so only the background shows beside
+       the current one. */
+    --slide-step: calc(
+      var(--half-window) + var(--slide-width) / 2 + var(--slide-margin)
+    );
+  }
+  .slides.layout-widescreen,
+  .slides.layout-faux-widescreen {
+    --slide-width: 1100px;
+  }
+
+  /* In the presenter notes window, the previous and next slide show
+     beside the current one, 30px away. */
+  .presenter-view .slides {
+    --slide-step: calc(var(--slide-width) + 30px);
   }
 
   .slides > article {
@@ -49,14 +80,14 @@
     position: absolute;
     overflow: hidden;
 
-    width: 900px;
-    height: 700px;
+    width: var(--slide-width);
+    height: var(--slide-height);
 
     left: 50%;
     top: 50%;
 
-    margin-left: -450px;
-    margin-top: -350px;
+    margin-left: calc(var(--slide-width) / -2);
+    margin-top: calc(var(--slide-height) / -2);
 
     padding: 40px 60px;
 
@@ -75,18 +106,8 @@
     border: 1px solid rgba(0, 0, 0, 0.3);
 
     transition: transform 0.3s ease-out;
-    -o-transition: -o-transform 0.3s ease-out;
-    -moz-transition: -moz-transform 0.3s ease-out;
-    -webkit-transition: -webkit-transform 0.3s ease-out;
-  }
-  .slides.layout-widescreen > article {
-    margin-left: -550px;
-    width: 1100px;
   }
   .slides.layout-faux-widescreen > article {
-    margin-left: -550px;
-    width: 1100px;
-
     padding: 40px 160px;
   }
 
@@ -95,22 +116,21 @@
     background-position-x: 0, 840px;
   }
 
-  /* Clickable/tappable areas */
+  /* Clickable/tappable areas, from each window edge to 50px into the
+     current slide. */
 
   .slide-area {
     z-index: 1000;
 
     position: absolute;
-    left: 0;
-    top: 0;
-    width: 150px;
-    height: 700px;
+    width: calc(var(--half-window) - var(--slide-width) / 2 + 50px);
+    height: var(--slide-height);
 
     left: 50%;
     top: 50%;
 
     cursor: pointer;
-    margin-top: -350px;
+    margin-top: calc(var(--slide-height) / -2);
 
     tap-highlight-color: transparent;
     -o-tap-highlight-color: transparent;
@@ -118,18 +138,10 @@
     -webkit-tap-highlight-color: transparent;
   }
   #prev-slide-area {
-    margin-left: -550px;
+    margin-left: calc(-1 * var(--half-window));
   }
   #next-slide-area {
-    margin-left: 400px;
-  }
-  .slides.layout-widescreen #prev-slide-area,
-  .slides.layout-faux-widescreen #prev-slide-area {
-    margin-left: -650px;
-  }
-  .slides.layout-widescreen #next-slide-area,
-  .slides.layout-faux-widescreen #next-slide-area {
-    margin-left: 500px;
+    margin-left: calc(var(--slide-width) / 2 - 50px);
   }
 
   /* Slides */
@@ -139,79 +151,23 @@
   }
   .slides > article.far-past {
     display: block;
-    transform: translate(-2040px);
-    -o-transform: translate(-2040px);
-    -moz-transform: translate(-2040px);
-    -webkit-transform: translate3d(-2040px, 0, 0);
+    transform: translateX(calc(-2 * var(--slide-step)));
   }
   .slides > article.past {
     display: block;
-    transform: translate(-1020px);
-    -o-transform: translate(-1020px);
-    -moz-transform: translate(-1020px);
-    -webkit-transform: translate3d(-1020px, 0, 0);
+    transform: translateX(calc(-1 * var(--slide-step)));
   }
   .slides > article.current {
     display: block;
-    transform: translate(0);
-    -o-transform: translate(0);
-    -moz-transform: translate(0);
-    -webkit-transform: translate3d(0, 0, 0);
+    transform: translateX(0);
   }
   .slides > article.next {
     display: block;
-    transform: translate(1020px);
-    -o-transform: translate(1020px);
-    -moz-transform: translate(1020px);
-    -webkit-transform: translate3d(1020px, 0, 0);
+    transform: translateX(var(--slide-step));
   }
   .slides > article.far-next {
     display: block;
-    transform: translate(2040px);
-    -o-transform: translate(2040px);
-    -moz-transform: translate(2040px);
-    -webkit-transform: translate3d(2040px, 0, 0);
-  }
-
-  .slides.layout-widescreen > article.far-past,
-  .slides.layout-faux-widescreen > article.far-past {
-    display: block;
-    transform: translate(-2260px);
-    -o-transform: translate(-2260px);
-    -moz-transform: translate(-2260px);
-    -webkit-transform: translate3d(-2260px, 0, 0);
-  }
-  .slides.layout-widescreen > article.past,
-  .slides.layout-faux-widescreen > article.past {
-    display: block;
-    transform: translate(-1130px);
-    -o-transform: translate(-1130px);
-    -moz-transform: translate(-1130px);
-    -webkit-transform: translate3d(-1130px, 0, 0);
-  }
-  .slides.layout-widescreen > article.current,
-  .slides.layout-faux-widescreen > article.current {
-    display: block;
-    transform: translate(0);
-    -o-transform: translate(0);
-    -moz-transform: translate(0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  .slides.layout-widescreen > article.next,
-  .slides.layout-faux-widescreen > article.next {
-    display: block;
-    transform: translate(1130px);
-    -o-transform: translate(1130px);
-    -moz-transform: translate(1130px);
-    -webkit-transform: translate3d(1130px, 0, 0);
-  }
-  .slides.layout-widescreen > article.far-next,
-  .slides.layout-faux-widescreen > article.far-next {
-    display: block;
-    transform: translate(2260px);
-    -o-transform: translate(2260px);
-    -moz-transform: translate(2260px);
-    -webkit-transform: translate3d(2260px, 0, 0);
+    transform: translateX(calc(2 * var(--slide-step)));
   }
 }
 

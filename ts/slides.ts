@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This module runs slide presentations: navigation, scaling to the window,
-// and syncing with the presenter notes window.
+// This module runs slide presentations: navigation and syncing with the presenter notes window.
 
 import {
   destSlideKey,
@@ -17,10 +16,6 @@ import {
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 
 const PM_TOUCH_SENSITIVITY = 15;
-
-// The size of the slide canvas, in CSS pixels; see styles.css.
-const SLIDE_WIDTH = 1250;
-const SLIDE_HEIGHT = 750;
 
 // SlideEvent is dispatched on a slide as 'slideenter' or 'slideleave'.
 interface SlideEvent extends Event {
@@ -294,47 +289,8 @@ function handleBodyKeyDown(event: KeyboardEvent) {
   }
 }
 
-function slidesSection(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('section.slides');
-}
-
-function scaleSmallViewports() {
-  const el = slidesSection();
-  if (!el) return;
-  const sAspectRatio = SLIDE_WIDTH / SLIDE_HEIGHT;
-  const wAspectRatio = window.innerWidth / window.innerHeight;
-
-  let transform = '';
-  if (wAspectRatio <= sAspectRatio && window.innerWidth < SLIDE_WIDTH) {
-    transform = 'scale(' + window.innerWidth / SLIDE_WIDTH + ')';
-  } else if (window.innerHeight < SLIDE_HEIGHT) {
-    transform = 'scale(' + window.innerHeight / SLIDE_HEIGHT + ')';
-  }
-  el.style.transform = transform;
-}
-
 function addEventListeners() {
   document.addEventListener('keydown', handleBodyKeyDown, false);
-
-  let resizeTimeout: number | undefined;
-  window.addEventListener('resize', () => {
-    // throttle resize events
-    window.clearTimeout(resizeTimeout);
-    resizeTimeout = window.setTimeout(() => {
-      resizeTimeout = undefined;
-      scaleSmallViewports();
-    }, 50);
-  });
-
-  // Reset the scaling of the slides when printing.
-  const beforePrint = () => {
-    const el = slidesSection();
-    if (el) el.style.transform = '';
-  };
-  window.addEventListener('beforeprint', beforePrint);
-  window.matchMedia('print').addEventListener('change', (mql) => {
-    if (mql.matches) beforePrint();
-  });
 }
 
 /* Initialization */
@@ -345,6 +301,12 @@ function addGeneralStyle() {
   style.href = '/static/styles.css';
   document.body.appendChild(style);
 
+  // Mark the copy of the slides in the presenter notes window, which
+  // shows the previous and next slide beside the current one.
+  if (window.frameElement?.id === 'presenter-slides') {
+    document.documentElement.classList.add('presenter-view');
+  }
+
   const viewport = document.createElement('meta');
   viewport.name = 'viewport';
   viewport.content = 'width=device-width,height=device-height,initial-scale=1';
@@ -354,8 +316,6 @@ function addGeneralStyle() {
   appleCapable.name = 'apple-mobile-web-app-capable';
   appleCapable.content = 'yes';
   document.head.appendChild(appleCapable);
-
-  scaleSmallViewports();
 }
 
 function handleDomLoaded() {
