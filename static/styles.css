@@ -246,16 +246,14 @@
     background: rgb(240, 240, 240);
   }
 
-  /* Add explicit links */
-  a:link:after,
-  a:visited:after {
-    content: ' (' attr(href) ') ';
-    font-size: 50%;
-  }
-
   #help {
     display: none;
     visibility: hidden;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
   }
 }
 
