@@ -41,6 +41,27 @@ func TestBackgroundErrors(t *testing.T) {
 	}
 }
 
+func TestFontSizeErrors(t *testing.T) {
+	for _, tt := range []struct {
+		line, want string
+	}{
+		{".fontsize big", `test.slide:5: invalid .fontsize size "big": want a factor such as 0.8, a percentage, or a size in px or pt`},
+		{".fontsize 2em", `test.slide:5: invalid .fontsize size "2em": want a factor such as 0.8, a percentage, or a size in px or pt`},
+		{".fontsize 1 2", "test.slide:5: .fontsize takes at most one size"},
+	} {
+		t.Run(tt.line, func(t *testing.T) {
+			input := "# Title\n\n## Slide\n\n" + tt.line + "\n"
+			_, err := Parse(strings.NewReader(input), "test.slide", 0)
+			if err == nil {
+				t.Fatalf("Parse did not return an error")
+			}
+			if got := err.Error(); got != tt.want {
+				t.Errorf("Parse error = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestLegacyRejected(t *testing.T) {
 	const input = `
 Title
@@ -165,8 +186,10 @@ var testTmpl = `
 {{define "section"}}
 {{if .Title}}<h2 id="TOC_{{.FormattedNumber}}">{{.Title}}</h2>
 {{end -}}
-{{range .Elem}}{{elem $.Template .}}{{end}}
+{{elems $.Template .Elem}}
 {{- end}}
+
+{{define "fontsize"}}{{end}}
 
 {{define "text" -}}
 <p>{{range $i, $l := .Lines}}{{if $i}}{{template "newline"}}{{end}}{{$l}}{{end}}</p>

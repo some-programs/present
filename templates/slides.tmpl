@@ -48,7 +48,7 @@
       <article {{$s.HTMLAttributes}}>
       {{if $s.Elem}}
         <h3>{{$s.Title}}</h3>
-        {{range $s.Elem}}{{elem $.Template .}}{{end}}
+        {{elems $.Template $s.Elem}}
       {{else}}
         <h2>{{$s.Title}}</h2>
       {{end}}
@@ -90,5 +90,5 @@
 {{/* Subsections of a slide get a small heading, without a number. */}}
 {{define "section"}}
   <h4>{{.Title}}</h4>
-  {{range .Elem}}{{elem $.Template .}}{{end}}
+  {{elems $.Template .Elem}}
 {{end}}

@@ -1,7 +1,9 @@
 body {
   margin: 0;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 16px;
+  /* The size that .fontsize sizes are relative to, and goes back to. */
+  --font-size-default: 16px;
+  font-size: var(--font-size-default);
 }
 pre,
 code {
@@ -24,6 +26,18 @@ p,
 ul,
 ol {
   margin: 20px;
+}
+/* The elements after a .fontsize command, in the font-size it sets, with
+   code sized as it is relative to the default text. */
+.fontsize pre,
+.fontsize code {
+  font-size: 0.875em; /* 14px at the default 16px */
+}
+.fontsize pre {
+  line-height: 1.286; /* 18px */
+}
+.fontsize pre code {
+  font-size: 1em;
 }
 table {
   margin: 20px;

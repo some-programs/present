@@ -179,6 +179,34 @@ func renderElem(t *template.Template, e Elem) (template.HTML, error) {
 	return execTemplate(t, e.TemplateName(), data)
 }
 
+// renderElems implements the elems template function, which renders a list
+// of elements. Each run of elements after a FontSize is wrapped in a div of
+// class "fontsize" that sets its size.
+func renderElems(t *template.Template, elems []Elem) (template.HTML, error) {
+	var b strings.Builder
+	open := false
+	for _, e := range elems {
+		if f, ok := e.(FontSize); ok {
+			if open {
+				b.WriteString("</div>")
+			}
+			// f.Size is safe in the attribute: parseFontSize made it.
+			fmt.Fprintf(&b, `<div class="fontsize" style="font-size: %s">`, f.Size)
+			open = true
+			continue
+		}
+		html, err := renderElem(t, e)
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(string(html))
+	}
+	if open {
+		b.WriteString("</div>")
+	}
+	return template.HTML(b.String()), nil
+}
+
 // pageNum derives a page number from a section.
 func pageNum(s Section, offset int) int {
 	if len(s.Number) == 0 {
@@ -189,6 +217,7 @@ func pageNum(s Section, offset int) int {
 
 func init() {
 	funcs["elem"] = renderElem
+	funcs["elems"] = renderElems
 	funcs["pagenum"] = pageNum
 	funcs["markdown"] = renderInlineMarkdown
 }

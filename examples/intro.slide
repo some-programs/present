@@ -64,6 +64,35 @@ Text under the subsection.
 
 #### Deeper levels use ####, ##### and so on
 
+## Font size
+
+.fontsize 3
+
+fontsize 3
+
+.fontsize 2
+
+fontsize 2
+
+.fontsize 0.8
+
+fontsize 0.8
+
+.fontsize 60%
+
+fontsize 60%
+
+.fontsize 0.45
+
+fontsize 0.45
+
+.fontsize
+
+and `.fontsize` alone goes back to the default.
+
+: Sizes are relative to the default size, not to the previous .fontsize.
+: Absolute sizes work too: .fontsize 20px or .fontsize 14pt.
+
 ## Links and HTML
 
 .link https://go.dev/ The **Go** website

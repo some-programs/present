@@ -167,7 +167,7 @@
     display: block;
     transform: translateX(calc(2 * var(--slide-step)));
   }
-  .slides > article:is(.far-past, .past, .current, .next, .far-next):has(> .image) {
+  .slides > article:is(.far-past, .past, .current, .next, .far-next):has(> .image, > .fontsize > .image) {
     display: flex;
   }
 }
@@ -190,7 +190,7 @@
   }
 
   /* Images are fitted to the slide, so it needs a height. */
-  .slides > article:has(> .image) {
+  .slides > article:has(> .image, > .fontsize > .image) {
     display: flex;
     aspect-ratio: 1100 / 700;
   }
@@ -226,7 +226,9 @@
   color: black;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 
-  font-size: 26px;
+  /* The size that .fontsize sizes are relative to, and goes back to. */
+  --font-size-default: 26px;
+  font-size: var(--font-size-default);
   line-height: 36px;
 
   letter-spacing: -1px;
@@ -379,8 +381,32 @@ pre code {
   font-size: 100%;
 }
 
+/* The elements after a .fontsize command, in the font-size it sets. The
+   wrapper leaves the layout to the slide, and the sizes of code and
+   subsection headings follow the text's, as they are at the default 26px. */
+.fontsize {
+  display: contents;
+  line-height: 1.385; /* 36px */
+  letter-spacing: -0.038em; /* -1px */
+}
+.fontsize pre {
+  font-size: 0.692em; /* 18px */
+  line-height: 1.333; /* 24px */
+}
+.fontsize h4 {
+  font-size: 1em;
+}
+/* The wrapper is never the first thing on a slide, so neither is its
+   first child. */
+.fontsize > p:first-child,
+.fontsize > h4:first-child {
+  margin-top: 20px;
+}
+
 article > .image,
-article > .video {
+article > .video,
+article > .fontsize > .image,
+article > .fontsize > .video {
   text-align: center;
   margin-top: 40px;
 }
@@ -395,13 +421,13 @@ article > .video {
    width divided by its aspect ratio, and shrinks to the space left on the
    slide; object-fit then centres the image in the narrower box that leaves.
    Either way the box is as tall as the image, so a caption follows it. */
-.slides > article:has(> .image) {
+.slides > article:has(> .image, > .fontsize > .image) {
   flex-direction: column;
 }
-.slides > article > .image {
+:is(.slides > article, .slides > article > .fontsize) > .image {
   display: contents;
 }
-.slides > article > .image > img {
+:is(.slides > article, .slides > article > .fontsize) > .image > img {
   flex: 0 1 auto;
   min-height: 0;
   width: min(

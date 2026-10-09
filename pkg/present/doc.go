@@ -291,6 +291,19 @@ a figcaption element.
 
 	.caption _Gopher_ by [Renee French](https://instagram.com/reneefrench)
 
+fontsize:
+
+The function "fontsize" sets the font size of what follows it in the
+section, up to the next fontsize or the end of the section. Code and
+subsection headings are sized along with the text. The size is a factor
+of the default size, a percentage of it, or a size in px or pt; without
+a size, fontsize goes back to the default.
+
+	.fontsize 0.8
+	.fontsize 120%
+	.fontsize 20px
+	.fontsize
+
 iframe:
 
 The function "iframe" injects iframes (pages inside pages).

@@ -5,8 +5,11 @@ It determines how the formatting actions are rendered.
 
 {{define "section"}}
   <h{{len .Number}} id="TOC_{{.FormattedNumber}}">{{.FormattedNumber}} {{.Title}}</h{{len .Number}}>
-  {{range .Elem}}{{elem $.Template .}}{{end}}
+  {{elems $.Template .Elem}}
 {{end}}
+
+{{/* The elems function applies .fontsize to the elements after it. */}}
+{{define "fontsize"}}{{end}}
 
 {{define "text"}}
   <p>
