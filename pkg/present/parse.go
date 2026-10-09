@@ -21,10 +21,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/v2/ast"
+	"github.com/yuin/goldmark/v2/parser"
+	"github.com/yuin/goldmark/v2/renderer/html"
+	"github.com/yuin/goldmark/v2/text"
 )
 
 var (
@@ -703,12 +703,10 @@ func trimSpeakerNote(s string) string {
 }
 
 func renderMarkdown(input []byte) (template.HTML, error) {
-	md := goldmark.New(goldmark.WithRendererOptions(html.WithUnsafe()))
-	reader := text.NewReader(input)
-	doc := md.Parser().Parse(reader)
+	doc := parser.New().Parse(input)
 	fixupMarkdown(doc)
 	var b strings.Builder
-	if err := md.Renderer().Render(&b, input, doc); err != nil {
+	if err := html.New(html.WithUnsafe()).Render(&b, input, doc); err != nil {
 		return "", err
 	}
 	return template.HTML(b.String()), nil
@@ -719,9 +717,9 @@ func fixupMarkdown(n ast.Node) {
 		if entering {
 			switch n := n.(type) {
 			case *ast.Link:
-				n.SetAttributeString("target", []byte("_blank"))
+				n.SetAttribute("target", text.NewMultiLineValueFromString("_blank", text.IdentityDecoder))
 				// https://developers.google.com/web/tools/lighthouse/audits/noopener
-				n.SetAttributeString("rel", []byte("noopener"))
+				n.SetAttribute("rel", text.NewMultiLineValueFromString("noopener", text.IdentityDecoder))
 			}
 		}
 		return ast.WalkContinue, nil
