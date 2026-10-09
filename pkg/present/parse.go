@@ -390,11 +390,9 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 		// This is nicer than the default #TOC_1_2-style anchor.
 		title := strings.TrimSpace(text[len(prefix):])
 		id := ""
-		if isMarkdown && strings.HasSuffix(title, "}") {
-			j := strings.LastIndex(title, "{#")
-			if j >= 0 {
-				id = title[j+2 : len(title)-1]
-				title = strings.TrimSpace(title[:j])
+		if rest, ok := strings.CutSuffix(title, "}"); isMarkdown && ok {
+			if before, after, ok := strings.CutLast(rest, "{#"); ok {
+				title, id = strings.TrimSpace(before), after
 			}
 		}
 		section := Section{
@@ -426,7 +424,7 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 				lines.back()
 				pre := strings.Join(s, "\n")
 				raw := pre
-				pre = strings.Replace(pre, "\t", "    ", -1) // browsers treat tabs badly
+				pre = strings.ReplaceAll(pre, "\t", "    ") // browsers treat tabs badly
 				pre = strings.TrimRightFunc(pre, unicode.IsSpace)
 				e = Text{Lines: []string{pre}, Pre: true, Raw: raw}
 			case !isMarkdown && strings.HasPrefix(text, "- "):
@@ -586,16 +584,14 @@ func parseHeader(doc *Doc, isMarkdown bool, lines *Lines) error {
 		if isSpeakerNote(text) {
 			continue
 		}
-		if strings.HasPrefix(text, "Tags:") {
-			tags := strings.Split(text[len("Tags:"):], ",")
-			for i := range tags {
-				tags[i] = strings.TrimSpace(tags[i])
+		if tags, ok := strings.CutPrefix(text, "Tags:"); ok {
+			for tag := range strings.SplitSeq(tags, ",") {
+				doc.Tags = append(doc.Tags, strings.TrimSpace(tag))
 			}
-			doc.Tags = append(doc.Tags, tags...)
-		} else if strings.HasPrefix(text, "Summary:") {
-			doc.Summary = strings.TrimSpace(text[len("Summary:"):])
-		} else if strings.HasPrefix(text, "OldURL:") {
-			doc.OldURL = append(doc.OldURL, strings.TrimSpace(text[len("OldURL:"):]))
+		} else if summary, ok := strings.CutPrefix(text, "Summary:"); ok {
+			doc.Summary = strings.TrimSpace(summary)
+		} else if oldURL, ok := strings.CutPrefix(text, "OldURL:"); ok {
+			doc.OldURL = append(doc.OldURL, strings.TrimSpace(oldURL))
 		} else if t, ok := parseTime(text); ok {
 			doc.Time = t
 		} else if doc.Subtitle == "" {

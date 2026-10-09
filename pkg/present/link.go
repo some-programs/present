@@ -21,7 +21,6 @@ type Link struct {
 	Label string
 }
 
-func (l Link) PresentCmd() string   { return l.Cmd }
 func (l Link) TemplateName() string { return "link" }
 
 func parseLink(ctx *Context, fileName string, lineno int, text string) (Elem, error) {

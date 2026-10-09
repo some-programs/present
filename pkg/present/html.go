@@ -33,5 +33,4 @@ type HTML struct {
 	template.HTML
 }
 
-func (s HTML) PresentCmd() string   { return s.Cmd }
 func (s HTML) TemplateName() string { return "html" }

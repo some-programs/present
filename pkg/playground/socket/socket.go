@@ -10,7 +10,6 @@
 package socket // import "github.com/some-programs/present/pkg/playground/socket"
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"go/parser"
@@ -24,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,14 +31,6 @@ import (
 	"github.com/some-programs/present/pkg/txtar"
 	"golang.org/x/net/websocket"
 )
-
-// RunScripts specifies whether the socket handler should execute shell scripts
-// (snippets that start with a shebang).
-var RunScripts = true
-
-// Environ provides an environment when a binary, such as the go tool, is
-// invoked.
-var Environ func() []string = os.Environ
 
 const (
 	// The maximum number of messages to send per session (avoid flooding).
@@ -139,7 +131,7 @@ func socketHandler(c *websocket.Conn) {
 				proc[m.Id].Kill()
 			}
 		case err := <-errc:
-			if err != io.EOF {
+			if !errors.Is(err, io.EOF) {
 				// A encode or decode has failed; bail.
 				log.Println(err)
 			}
@@ -177,11 +169,7 @@ func startProcess(id, body string, dest chan<- *Message, opt *Options) *process 
 	}()
 	var err error
 	if path, args := shebang(body); path != "" {
-		if RunScripts {
-			err = p.startProcess(path, args, body)
-		} else {
-			err = errors.New("script execution is not allowed")
-		}
+		err = p.startProcess(path, args, body)
 	} else {
 		err = p.start(body, opt)
 	}
@@ -318,9 +306,7 @@ func shebang(body string) (path string, args []string) {
 	if !strings.HasPrefix(body, "#!") {
 		return "", nil
 	}
-	if i := strings.Index(body, "\n"); i >= 0 {
-		body = body[:i]
-	}
+	body, _, _ = strings.Cut(body, "\n")
 	fs := strings.Fields(body[2:])
 	return fs[0], fs
 }
@@ -368,20 +354,17 @@ func (p *process) start(body string, opt *Options) error {
 		a.Files = append(a.Files, txtar.File{Name: "prog.go", Data: a.Comment})
 		a.Comment = nil
 	}
-	hasModfile := false
-	for _, f := range a.Files {
-		err = os.WriteFile(filepath.Join(path, f.Name), f.Data, 0666)
-		if err != nil {
-			return err
-		}
-		if f.Name == "go.mod" {
-			hasModfile = true
-		}
+	fsys, err := txtar.FS(a)
+	if err != nil {
+		return err
+	}
+	if err := os.CopyFS(path, fsys); err != nil {
+		return err
 	}
 
 	// A snippet without its own go.mod becomes a module of its own, at
 	// the language version of the installed go command.
-	if !hasModfile {
+	if !slices.ContainsFunc(a.Files, func(f txtar.File) bool { return f.Name == "go.mod" }) {
 		cmd := p.cmd(path, "go", "mod", "init", "prog")
 		cmd.Stdout, cmd.Stderr = nil, nil
 		if out, err := cmd.CombinedOutput(); err != nil {
@@ -431,7 +414,7 @@ func (p *process) start(body string, opt *Options) error {
 func (p *process) cmd(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = dir
-	cmd.Env = Environ()
+	cmd.Env = os.Environ()
 	cmd.Stdout = &messageWriter{kind: "stdout", out: p.out}
 	cmd.Stderr = &messageWriter{kind: "stderr", out: p.out}
 	return cmd
@@ -460,14 +443,5 @@ func (w *messageWriter) Write(b []byte) (n int, err error) {
 
 // safeString returns b as a valid UTF-8 string.
 func safeString(b []byte) string {
-	if utf8.Valid(b) {
-		return string(b)
-	}
-	var buf bytes.Buffer
-	for len(b) > 0 {
-		r, size := utf8.DecodeRune(b)
-		b = b[size:]
-		buf.WriteRune(r)
-	}
-	return buf.String()
+	return strings.ToValidUTF8(string(b), string(utf8.RuneError))
 }

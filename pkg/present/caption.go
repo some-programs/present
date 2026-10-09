@@ -15,7 +15,6 @@ type Caption struct {
 	Text string
 }
 
-func (c Caption) PresentCmd() string   { return c.Cmd }
 func (c Caption) TemplateName() string { return "caption" }
 
 func parseCaption(_ *Context, _ string, _ int, cmd string) (Elem, error) {

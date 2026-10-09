@@ -43,7 +43,6 @@ type Code struct {
 	Raw      []byte // content of the file
 }
 
-func (c Code) PresentCmd() string   { return c.Cmd }
 func (c Code) TemplateName() string { return "code" }
 
 // The input line is a .code or .play entry with a file name and an optional HLfoo marker on the end.
@@ -150,7 +149,7 @@ func formatLines(lines []codeLine, highlight string) []codeLine {
 	formatted := make([]codeLine, len(lines))
 	for i, line := range lines {
 		// Replace tabs with spaces, which work better in HTML.
-		line.L = strings.Replace(line.L, "\t", "    ", -1)
+		line.L = strings.ReplaceAll(line.L, "\t", "    ")
 
 		// Highlight lines that end with "// HL[highlight]"
 		// and strip the magic comment.
@@ -211,15 +210,7 @@ type codeLine struct {
 // span the byte range specified by start and end.
 // It discards lines that end in "OMIT".
 func codeLines(src []byte, start, end int) (lines []codeLine) {
-	startLine := 1
-	for i, b := range src {
-		if i == start {
-			break
-		}
-		if b == '\n' {
-			startLine++
-		}
-	}
+	startLine := bytes.Count(src[:start], []byte("\n")) + 1
 	s := bufio.NewScanner(bytes.NewReader(src[start:end]))
 	for n := startLine; s.Scan(); n++ {
 		l := s.Text()
@@ -238,35 +229,27 @@ func codeLines(src []byte, start, end int) (lines []codeLine) {
 	return
 }
 
-func parseArgs(name string, line int, args []string) (res []any, err error) {
-	res = make([]any, len(args))
-	for i, v := range args {
-		if len(v) == 0 {
-			return nil, fmt.Errorf("%s:%d bad code argument %q", name, line, v)
-		}
-		switch v[0] {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			n, err := strconv.Atoi(v)
-			if err != nil {
-				return nil, fmt.Errorf("%s:%d bad code argument %q", name, line, v)
-			}
-			res[i] = n
-		case '/':
-			if len(v) < 2 || v[len(v)-1] != '/' {
-				return nil, fmt.Errorf("%s:%d bad code argument %q", name, line, v)
-			}
-			res[i] = v
-		case '$':
-			res[i] = "$"
-		case '_':
-			if len(v) == 1 {
-				// Do nothing; "_" indicates an intentionally empty parameter.
-				break
-			}
-			fallthrough
-		default:
-			return nil, fmt.Errorf("%s:%d bad code argument %q", name, line, v)
-		}
+// parseDims parses the height and width arguments of an .iframe or .video
+// command, each a number of pixels or _ for none. With no height or width,
+// the template omits that attribute and the browser keeps the aspect ratio.
+func parseDims(height, width string) (h, w int, err error) {
+	if h, err = parsePixels(height); err != nil {
+		return 0, 0, err
 	}
-	return
+	if w, err = parsePixels(width); err != nil {
+		return 0, 0, err
+	}
+	return h, w, nil
+}
+
+// parsePixels parses a number of pixels, or _ for none, which is 0.
+func parsePixels(s string) (int, error) {
+	if s == "_" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("bad size %q", s)
+	}
+	return n, nil
 }

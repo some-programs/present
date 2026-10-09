@@ -20,7 +20,6 @@ type Iframe struct {
 	Height int
 }
 
-func (i Iframe) PresentCmd() string   { return i.Cmd }
 func (i Iframe) TemplateName() string { return "iframe" }
 
 func parseIframe(ctx *Context, fileName string, lineno int, text string) (Elem, error) {
@@ -29,19 +28,13 @@ func parseIframe(ctx *Context, fileName string, lineno int, text string) (Elem, 
 		return nil, fmt.Errorf("incorrect iframe invocation: %q", text)
 	}
 	i := Iframe{Cmd: text, URL: args[1]}
-	a, err := parseArgs(fileName, lineno, args[2:])
-	if err != nil {
-		return nil, err
-	}
-	switch len(a) {
-	case 0:
-		// no size parameters
+	switch len(args) {
 	case 2:
-		if v, ok := a[0].(int); ok {
-			i.Height = v
-		}
-		if v, ok := a[1].(int); ok {
-			i.Width = v
+		// no size parameters
+	case 4:
+		var err error
+		if i.Height, i.Width, err = parseDims(args[2], args[3]); err != nil {
+			return nil, fmt.Errorf("%s:%d: incorrect iframe invocation: %q: %v", fileName, lineno, text, err)
 		}
 	default:
 		return nil, fmt.Errorf("incorrect iframe invocation: %q", text)

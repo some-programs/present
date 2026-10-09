@@ -50,7 +50,6 @@ type Image struct {
 // made from.
 var diagramExts = []string{".dot", ".mmd", ".mermaid"}
 
-func (i Image) PresentCmd() string   { return i.Cmd }
 func (i Image) TemplateName() string { return "image" }
 
 func parseImage(_ *Context, fileName string, lineno int, text string) (Elem, error) {

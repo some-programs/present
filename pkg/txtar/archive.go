@@ -34,7 +34,6 @@ package txtar
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -62,15 +61,6 @@ func Format(a *Archive) []byte {
 		buf.Write(fixNL(f.Data))
 	}
 	return buf.Bytes()
-}
-
-// ParseFile parses the named file as an archive.
-func ParseFile(file string) (*Archive, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	return Parse(data), nil
 }
 
 // Parse parses the serialized form of an Archive.
