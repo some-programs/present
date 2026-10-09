@@ -1,0 +1,21 @@
+-- go.mod --
+module example/multi
+go 1.27
+-- main.go --
+package main
+
+import (
+	"fmt"
+
+	"example/multi/greet"
+)
+
+func main() {
+	fmt.Println(greet.Hello("present"))
+}
+-- greet/greet.go --
+package greet
+
+func Hello(name string) string {
+	return "Hello from another package, " + name + "!"
+}

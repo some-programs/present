@@ -1,0 +1,17 @@
+digraph pipeline {
+	rankdir=LR;
+	node [shape=box, style="rounded,filled", fillcolor="#e0f4fa", fontname="sans-serif"];
+	edge [fontname="sans-serif", fontsize=10];
+
+	main [label="main"];
+	jobs [label="jobs", shape=cds, fillcolor="#fdf3c4"];
+	w0 [label="worker 0"];
+	w1 [label="worker 1"];
+	w2 [label="worker 2"];
+	results [label="results", shape=cds, fillcolor="#fdf3c4"];
+
+	main -> jobs [label="send"];
+	jobs -> {w0 w1 w2};
+	{w0 w1 w2} -> results;
+	results -> main [label="receive"];
+}

@@ -1,0 +1,66 @@
+# Showing and Running Code
+.code, .play and friends
+9 Oct 2026
+
+Ada Example
+ada@example.com
+
+## A whole file
+
+`.code code/hello/main.go` shows a file as it is:
+
+.code code/hello/main.go
+
+## Part of a file
+
+An address picks the lines to show. Lines ending in `OMIT` are left out:
+
+.code code/fib/main.go /START OMIT/,/END OMIT/
+
+A regular expression alone picks a single line:
+
+.code code/fib/main.go /^func main/
+
+## Highlighting
+
+Lines ending in `// HLstep` are highlighted when the command ends in `HLstep`:
+
+.code code/fib/main.go /^func fib/,/^}/ HLstep
+
+Each word marks its own group of lines. This file also has `// HLmain`:
+
+.code code/fib/main.go /^func main/,/^}/ HLmain
+
+## Line numbers and editing
+
+.code -numbers code/fib/main.go /^func main/,/^}/
+
+`-edit` lets the audience change the code on the slide:
+
+.code -edit code/hello/main.go
+
+## Running Go
+
+`.play` runs the program on the machine running present. Click Run, or press shift+enter:
+
+.play code/hello/main.go
+
+: Run present with -play=false to turn off running programs.
+
+## Running only part of the source
+
+Only the selected lines are shown, but the whole file is run:
+
+.play -edit code/pipeline/main.go /^func main/,/^}/
+
+## Several files
+
+A [txtar](https://pkg.go.dev/golang.org/x/tools/txtar) archive holds several files; without a go.mod, one is made.
+
+.play code/multi.txtar
+
+## Other languages
+
+A program starting with `#!` runs with that interpreter:
+
+.play code/system.sh

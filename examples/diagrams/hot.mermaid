@@ -1,0 +1,7 @@
+stateDiagram-v2
+    direction LR
+    [*] --> Showing
+    Showing --> Parsing: a file changes
+    Parsing --> Showing: it parses
+    Parsing --> Error: it does not
+    Error --> Parsing: a file changes

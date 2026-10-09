@@ -1,0 +1,10 @@
+sequenceDiagram
+    participant B as Browser
+    participant P as present
+    participant G as go build
+    B->>P: Run (WebSocket)
+    P->>G: build the snippet
+    G-->>P: binary
+    P->>P: start the program
+    P-->>B: stdout and stderr, as they come
+    P-->>B: exit status

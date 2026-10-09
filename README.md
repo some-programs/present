@@ -4,6 +4,14 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/some-programs/present.svg)](https://pkg.go.dev/github.com/some-programs/present)
 
+The quickest way to learn present is to look at the [examples](examples):
+presentations that show every feature, from Markdown text and speaker notes
+to runnable code, diagrams and video. From a checkout of this repository, run
+
+    go run . -content examples -notes
+
+and open http://127.0.0.1:3999.
+
 ## Command
 
 Present displays slide presentations and articles. It runs a web server that presents slide and article files from the current directory.

@@ -1,0 +1,33 @@
+# Writing Articles
+The same format, laid out as a page
+9 Oct 2026
+Tags: present, article
+Summary: A .article file uses the present format for a long page instead of slides.
+OldURL: /old/notes
+
+Ada Example
+ada@example.com
+
+## Articles
+
+A file ending in `.article` is shown as one page,
+like a blog post, instead of as slides.
+Everything that works in a `.slide` file works here too,
+and sections are numbered in a table of contents.
+
+## Code
+
+.play code/fib/main.go
+
+The source can be shown in pieces, with prose between them:
+
+.code code/pipeline/main.go /^func worker/,/^}/
+
+### A subsection
+
+Subsections start with `###` and nest inside a section.
+
+## Pictures
+
+.image diagrams/pipeline.dot
+.caption Diagrams work in articles too.

@@ -1,0 +1,61 @@
+# A Tour of Present
+Slides, articles and everything in between
+10:00 9 Oct 2026
+Tags: present, example
+Summary: The basics of the present file format: header, authors, text and simple commands.
+: Notes before the first slide belong to the title slide.
+: Run present with -notes and press N to see them.
+
+Ada Example
+Gopher Wrangler, Example Corp
+ada@example.com
+https://example.com/
+@ada_example
+
+Grace Example
+Compiler Whisperer
+
+## Text
+
+Section text is [CommonMark](https://commonmark.org/help/) Markdown:
+_italic_, **bold**, `code` and [links](https://go.dev/).
+
+- bullet lists
+- with several items
+  continued on the next line
+
+1. numbered lists
+2. work too
+
+// A line starting with // is a comment and is not shown.
+
+: Lines starting with ": " are speaker notes for this slide.
+
+## Code blocks and quotes
+
+Indented or fenced blocks are shown as code, without running anything:
+
+```
+$ go run golang.org/x/tools/cmd/present@latest
+```
+
+> Clear is better than clever.
+
+\.play and the other commands start with a period; a backslash before it shows the line as text.
+
+## Links and HTML
+
+.link https://go.dev/ The **Go** website
+
+.html html/badge.html
+
+.iframe html/frame.html 120 600
+
+: .link shows a single link on a line of its own; its label is inline Markdown.
+: .html includes a file as raw HTML; .iframe embeds a page.
+
+## What next
+
+- [code.slide](code.slide): showing and running code
+- [media.slide](media.slide): images, diagrams and video
+- [notes.article](notes.article): the article format, with subsections

@@ -1,0 +1,56 @@
+# Images, Diagrams and Video
+.image, .caption, .background and .video
+9 Oct 2026
+
+Ada Example
+ada@example.com
+
+## An image
+
+With no size, an image fills the space left on the slide:
+
+.image images/plasma.jpg
+.caption A _plasma_ fractal made with [ImageMagick](https://imagemagick.org/).
+
+## Image sizes
+
+A fraction of the slide, or a height and width in pixels or fractions, with `_` for no limit:
+
+.image images/shapes.svg 0.25
+.image images/shapes.svg 120 _
+.image images/shapes.svg _ 0.2
+
+## Graphviz
+
+A `.dot` file is rendered to the SVG file next to it with `dot`:
+
+.image diagrams/pipeline.dot
+.caption The worker pool from code.slide.
+
+: present renders diagrams again whenever their source changes.
+: Run present with -norender to show the existing SVG files instead.
+
+## Mermaid
+
+`.mmd` and `.mermaid` files are rendered with the Mermaid CLI, `mmdc`:
+
+.image diagrams/run.mmd 0.7
+.caption What happens when you click Run.
+
+## A state diagram
+
+With `-hot`, the browser reloads a presentation when its files change,
+and shows parse errors over the old slides:
+
+.image diagrams/hot.mermaid
+
+## A background
+
+.background images/background.svg
+
+`.background` sets the image behind the whole slide.
+
+## Video
+
+.video video/testsrc.webm video/webm 270 480
+.caption Made with `ffmpeg -f lavfi -i testsrc2`.
