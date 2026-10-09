@@ -32,13 +32,11 @@ pre .ln {
 body {
   color: #222;
 }
-a,
-.exampleHeading .text {
+a {
   color: #375eab;
   text-decoration: none;
 }
-a:hover,
-.exampleHeading .text:hover {
+a:hover {
   text-decoration: underline;
 }
 p,
@@ -95,10 +93,6 @@ dl,
 dd {
   font-size: 14px;
 }
-div#nav table td {
-  vertical-align: top;
-}
-
 div#heading {
   float: left;
   margin: 0 0 10px 0;
@@ -131,56 +125,4 @@ div#topbar > .container {
 div#page.wide,
 div#topbar > .wide {
   width: auto;
-}
-div#plusone {
-  float: right;
-}
-
-div#footer {
-  color: #666;
-  font-size: 14px;
-  margin: 40px 0;
-}
-
-div#menu > a,
-div#menu > input {
-  padding: 10px;
-
-  text-decoration: none;
-  font-size: 16px;
-
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  border-radius: 5px;
-}
-div#menu > a,
-div#menu > input {
-  border: 1px solid #375eab;
-}
-div#menu > a {
-  color: white;
-  background: #375eab;
-}
-
-div#menu {
-  float: right;
-  min-width: 590px;
-  padding: 10px 0;
-  text-align: right;
-}
-div#menu > a {
-  margin-right: 5px;
-  margin-bottom: 10px;
-
-  padding: 10px;
-}
-div#menu > input {
-  position: relative;
-  top: 1px;
-  width: 60px;
-  background: white;
-  color: #222;
-}
-div#menu > input.inactive {
-  color: #999;
 }

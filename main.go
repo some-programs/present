@@ -25,6 +25,7 @@ var (
 	basePath      = flag.String("base", "", "base path for slide template and static resources")
 	contentPath   = flag.String("content", ".", "base path for presentation content")
 	usePlayground = flag.Bool("use_playground", false, "run code snippets using play.golang.org; if false, run them locally and deliver results by WebSocket transport")
+	thankYou      = flag.Bool("thankyou", false, "end slide presentations with a \"Thank you\" slide listing the authors")
 )
 
 //go:embed static templates

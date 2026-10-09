@@ -80,7 +80,10 @@ func initTemplates(fsys fs.FS) error {
 
 		// Read and parse the input.
 		tmpl := present.Template()
-		tmpl = tmpl.Funcs(template.FuncMap{"playable": playable})
+		tmpl = tmpl.Funcs(template.FuncMap{
+			"playable": playable,
+			"thankYou": func() bool { return *thankYou },
+		})
 		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
 			return err
 		}
@@ -143,10 +146,6 @@ func dirList(w io.Writer, name string) (isDir bool, err error) {
 	strippedPath = strings.TrimPrefix(strippedPath, "/")
 	d := &dirListData{Path: strippedPath}
 	for _, fi := range fis {
-		// skip the golang.org directory
-		if name == "." && fi.Name() == "golang.org" {
-			continue
-		}
 		e := dirEntry{
 			Name: fi.Name(),
 			Path: filepath.ToSlash(filepath.Join(strippedPath, fi.Name())),
