@@ -8,23 +8,11 @@ It determines how the formatting actions are rendered.
   {{range .Elem}}{{elem $.Template .}}{{end}}
 {{end}}
 
-{{define "list"}}
-  <ul>
-  {{range .Bullet}}
-    <li>{{style .}}</li>
-  {{end}}
-  </ul>
-{{end}}
-
 {{define "text"}}
-  {{if .Pre}}
-  <div class="code"><pre>{{range .Lines}}{{.}}{{end}}</pre></div>
-  {{else}}
   <p>
     {{range $i, $l := .Lines}}{{if $i}}{{template "newline"}}
-    {{end}}{{style $l}}{{end}}
+    {{end}}{{$l}}{{end}}
   </p>
-  {{end}}
 {{end}}
 
 {{define "code"}}
@@ -58,8 +46,8 @@ It determines how the formatting actions are rendered.
 <iframe src="{{.URL}}"{{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}}></iframe>
 {{end}}
 
-{{define "link"}}<p class="link"><a href="{{.URL}}" target="_blank">{{style .Label}}</a></p>{{end}}
+{{define "link"}}<p class="link"><a href="{{.URL}}" target="_blank">{{markdown .Label}}</a></p>{{end}}
 
 {{define "html"}}{{.HTML}}{{end}}
 
-{{define "caption"}}<figcaption>{{style .Text}}</figcaption>{{end}}
+{{define "caption"}}<figcaption>{{markdown .Text}}</figcaption>{{end}}

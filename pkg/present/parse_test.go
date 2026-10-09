@@ -17,9 +17,9 @@ import (
 )
 
 func TestBackgroundErrors(t *testing.T) {
-	const input = `Title
+	const input = `# Title
 
-* Slide
+## Slide
 
 %s
 `
@@ -41,17 +41,28 @@ func TestBackgroundErrors(t *testing.T) {
 	}
 }
 
+func TestLegacyRejected(t *testing.T) {
+	const input = `
+Title
+
+* Slide
+`
+	const want = `test.slide:2: title must begin with "# " (legacy present markup is not supported)`
+	_, err := Parse(strings.NewReader(input), "test.slide", TitlesOnly)
+	if err == nil {
+		t.Fatalf("Parse did not return an error")
+	}
+	if got := err.Error(); got != want {
+		t.Errorf("Parse error = %q, want %q", got, want)
+	}
+}
+
 func TestTestdata(t *testing.T) {
 	tmpl := template.Must(Template().Parse(testTmpl))
-	filesP, err := filepath.Glob("testdata/*.p")
+	files, err := filepath.Glob("testdata/*.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	filesMD, err := filepath.Glob("testdata/*.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	files := append(filesP, filesMD...)
 	for _, file := range files {
 		name := filepath.Base(file)
 		if name == "README" {
@@ -157,20 +168,8 @@ var testTmpl = `
 {{range .Elem}}{{elem $.Template .}}{{end}}
 {{- end}}
 
-{{define "list" -}}
-<ul>
-{{range .Bullet -}}
-<li>{{style .}}</li>
-{{end -}}
-</ul>
-{{end}}
-
 {{define "text" -}}
-{{if .Pre -}}
-<pre>{{range .Lines}}{{.}}{{end}}</pre>
-{{else -}}
-<p>{{range $i, $l := .Lines}}{{if $i}}{{template "newline"}}{{end}}{{style $l}}{{end}}</p>
-{{end -}}
+<p>{{range $i, $l := .Lines}}{{if $i}}{{template "newline"}}{{end}}{{$l}}{{end}}</p>
 {{end}}
 
 {{define "code" -}}
@@ -186,7 +185,7 @@ var testTmpl = `
 {{end}}
 
 {{define "caption" -}}
-<figcaption>{{style .Text}}</figcaption>
+<figcaption>{{markdown .Text}}</figcaption>
 {{end}}
 
 {{define "iframe" -}}
@@ -194,7 +193,7 @@ var testTmpl = `
 {{end}}
 
 {{define "link" -}}
-<p class="link"><a href="{{.URL}}">{{style .Label}}</a></p>
+<p class="link"><a href="{{.URL}}">{{markdown .Label}}</a></p>
 {{end}}
 
 {{define "html" -}}{{.HTML}}{{end}}

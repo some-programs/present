@@ -22,11 +22,9 @@ and other metadata, which looks like:
 	Summary: This is a great document you want to read.
 	OldURL: former-path-for-this-doc
 
-The "# " prefix before the title indicates that this is
-a Markdown-enabled present file: it uses
-Markdown for text markup in the body of the file.
-If the "# " prefix is missing, the file uses
-legacy present markup, described below.
+The title line must begin with "# ". The body of the file uses
+Markdown for text markup. Files in the legacy present markup, whose title
+line has no "# " prefix, are not supported.
 
 The date line may be written without a time:
 
@@ -45,8 +43,7 @@ A server might use these to generate appropriate redirects.
 
 Only the title is required;
 the subtitle, date, tags, summary, and old URL lines are optional.
-In Markdown-enabled present, the summary defaults to being empty.
-In legacy present, the summary defaults to the first paragraph of text.
+The summary defaults to being empty.
 
 After the header come zero or more author blocks, like this:
 
@@ -66,10 +63,8 @@ by its own blank line.
 
 After the author blocks come the presentation slides or article sections,
 which can in turn have subsections.
-In Markdown-enabled present files, each slide or section begins with a "##" header line,
+Each slide or section begins with a "##" header line,
 subsections begin with a "###" header line, and so on.
-In legacy present files, each slide or section begins with a "*" header line,
-subsections begin with a "**" header line, and so on.
 
 In addition to the marked-up text in a section (or subsection),
 a present file can contain present command invocations, each of which begins
@@ -82,10 +77,9 @@ with a dot, as in:
 	.iframe https://foo
 	.link https://foo label
 	.html file.html
-	.caption _Gopher_ by [[https://instagram.com/reneefrench][Renee French]]
+	.caption _Gopher_ by [Renee French](https://instagram.com/reneefrench)
 
-Other than the commands, the text in a section is interpreted
-either as Markdown or as legacy present markup.
+Other than the commands, the text in a section is interpreted as Markdown.
 
 # Markdown Syntax
 
@@ -93,8 +87,7 @@ Markdown typically means the generic name for a family of similar markup languag
 The specific variant used in present is CommonMark.
 See https://commonmark.org/help/tutorial/ for a quick tutorial.
 
-In Markdown-enabled present,
-section headings can end in {#name} to set the HTML anchor ID for the heading to "name".
+Section headings can end in {#name} to set the HTML anchor ID for the heading to "name".
 
 Lines beginning with "//" (outside of code blocks, of course)
 are treated as present comments and have no effect.
@@ -142,72 +135,6 @@ Example:
 	_Why use scoped\_ptr_? Use plain **\*ptr** instead.
 
 	Visit [the Go home page](https://golang.org/).
-
-# Legacy Present Syntax
-
-Compared to Markdown,
-in legacy present
-slides/sections use "*" instead of "##",
-whole-line comments begin with "#" instead of "//",
-bullet lists can only contain single (possibly wrapped) text lines,
-and the font styling and link syntaxes are subtly different.
-
-Example:
-
-	Title of Talk
-
-	My Name
-	1 Jan 2013
-	me@example.com
-
-	* Title of Slide or Section (must begin with *)
-
-	Some Text
-
-	** Subsection
-
-	- bullets
-	- more bullets
-	- a bullet continued
-	  on the next line (indented at least one space)
-
-	*** Sub-subsection
-
-	Some More text
-
-	  Preformatted text (code block)
-	  is indented (however you like)
-
-	Further Text, including command invocations.
-
-	* Section 2: Example formatting
-
-	Formatting:
-
-	_italic_
-	*bold*
-	`program`
-	Markup—_especially_italic_text_—can easily be overused.
-	_Why_use_scoped__ptr_? Use plain ***ptr* instead.
-
-	Visit [[https://golang.org][the Go home page]].
-
-Within the input for plain text or lists, text bracketed by font
-markers will be presented in italic, bold, or program font.
-Marker characters are _ (italic), * (bold) and ` (program font).
-An opening marker must be preceded by a space or punctuation
-character or else be at start of a line; similarly, a closing
-marker must be followed by a space or punctuation character or
-else be at the end of a line. Unmatched markers appear as plain text.
-There must be no spaces between markers. Within marked text,
-a single marker character becomes a space and a doubled single
-marker quotes the marker character.
-
-Links can be included in any text with either explicit labels
-or the URL itself as the label. For example:
-
-	[[url][label]]
-	[[url]]
 
 # Command Invocations
 
@@ -294,7 +221,8 @@ link:
 
 Create a hyperlink. The syntax is 1 or 2 space-separated arguments.
 The first argument is always the HTTP URL.  If there is a second
-argument, it is the text label to display for this link.
+argument, it is the text label to display for this link, rendered as
+inline Markdown.
 
 	.link https://golang.org golang.org
 
@@ -353,10 +281,10 @@ caption:
 
 The template uses the function "caption" to inject figure captions.
 
-The text after ".caption" is embedded in a figcaption element after
-processing styling and links as in standard text lines.
+The text after ".caption" is rendered as inline Markdown and embedded in
+a figcaption element.
 
-	.caption _Gopher_ by [[https://instagram.com/reneefrench][Renee French]]
+	.caption _Gopher_ by [Renee French](https://instagram.com/reneefrench)
 
 iframe:
 
@@ -374,8 +302,7 @@ It is your responsibility to make sure the included HTML is valid and safe.
 
 # Presenter Notes
 
-Lines that begin with ": " are treated as presenter notes,
-in both Markdown and legacy present syntax.
+Lines that begin with ": " are treated as presenter notes.
 By default, presenter notes are collected but ignored.
 
 When running the present command with -notes,

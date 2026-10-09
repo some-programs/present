@@ -6,7 +6,6 @@ package present
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 )
@@ -43,59 +42,4 @@ func parseLink(ctx *Context, fileName string, lineno int, text string) (Elem, er
 		label = strings.Replace(url.String(), scheme, "", 1)
 	}
 	return Link{text, url, label}, nil
-}
-
-func renderLink(href, text string) string {
-	text = font(text)
-	if text == "" {
-		text = href
-	}
-	// Open links in new window only when their url is absolute.
-	target := "_blank"
-	if u, err := url.Parse(href); err != nil {
-		log.Println("renderLink parsing url:", err)
-	} else if !u.IsAbs() || u.Scheme == "javascript" {
-		target = "_self"
-	}
-
-	return fmt.Sprintf(`<a href="%s" target="%s">%s</a>`, href, target, text)
-}
-
-// parseInlineLink parses an inline link at the start of s, and returns
-// a rendered HTML link and the total length of the raw inline link.
-// If no inline link is present, it returns all zeroes.
-func parseInlineLink(s string) (link string, length int) {
-	if !strings.HasPrefix(s, "[[") {
-		return
-	}
-	end := strings.Index(s, "]]")
-	if end == -1 {
-		return
-	}
-	urlEnd := strings.Index(s, "]")
-	rawURL := s[2:urlEnd]
-	const badURLChars = `<>"{}|\^[] ` + "`" // per RFC2396 section 2.4.3
-	if strings.ContainsAny(rawURL, badURLChars) {
-		return
-	}
-	if urlEnd == end {
-		simpleURL := ""
-		url, err := url.Parse(rawURL)
-		if err == nil {
-			// If the URL is http://foo.com, drop the http://
-			// In other words, render [[http://golang.org]] as:
-			//   <a href="http://golang.org">golang.org</a>
-			if after, ok := strings.CutPrefix(rawURL, url.Scheme+"://"); ok {
-				simpleURL = after
-			} else if after, ok := strings.CutPrefix(rawURL, url.Scheme+":"); ok {
-				simpleURL = after
-			}
-		}
-		return renderLink(rawURL, simpleURL), end + 2
-	}
-	if s[urlEnd:urlEnd+2] != "][" {
-		return
-	}
-	text := s[urlEnd+2 : end]
-	return renderLink(rawURL, text), end + 2
 }

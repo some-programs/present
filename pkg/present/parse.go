@@ -18,8 +18,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/yuin/goldmark/v2/ast"
 	"github.com/yuin/goldmark/v2/parser"
@@ -191,6 +189,7 @@ func pageNum(s Section, offset int) int {
 func init() {
 	funcs["elem"] = renderElem
 	funcs["pagenum"] = pageNum
+	funcs["markdown"] = renderInlineMarkdown
 }
 
 // execTemplate is a helper to execute a template and return the output as a
@@ -204,21 +203,12 @@ func execTemplate(t *template.Template, name string, data any) (template.HTML, e
 	return template.HTML(b.String()), nil
 }
 
-// Text represents an optionally preformatted paragraph.
+// Text represents a paragraph of plain text.
 type Text struct {
 	Lines []string
-	Pre   bool
-	Raw   string // original text, for Pre==true
 }
 
 func (t Text) TemplateName() string { return "text" }
-
-// List represents a bulleted list.
-type List struct {
-	Bullet []string
-}
-
-func (l List) TemplateName() string { return "list" }
 
 // Lines is a helper for parsing line-based input.
 type Lines struct {
@@ -236,7 +226,7 @@ func readLines(r io.Reader) (*Lines, error) {
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
-	return &Lines{0, lines, "#"}, nil
+	return &Lines{0, lines, "//"}, nil
 }
 
 func (l *Lines) next() (text string, ok bool) {
@@ -295,25 +285,19 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 		return nil, err
 	}
 
-	// Detect Markdown-enabled vs legacy present file.
-	// Markdown-enabled files have a title line beginning with "# "
-	// (like preprocessed C files of yore).
-	isMarkdown := false
-	for i := lines.line; i < len(lines.text); i++ {
-		line := lines.text[i]
+	// The title line must begin with "# ".
+	// Files without it use the legacy present markup, which is not supported.
+	for i, line := range lines.text {
 		if line == "" {
 			continue
 		}
-		isMarkdown = strings.HasPrefix(line, "# ")
+		if !strings.HasPrefix(line, "# ") {
+			return nil, fmt.Errorf("%s:%d: title must begin with \"# \" (legacy present markup is not supported)", name, i+1)
+		}
 		break
 	}
 
-	sectionPrefix := "*"
-	if isMarkdown {
-		sectionPrefix = "##"
-		lines.comment = "//"
-	}
-
+	const sectionPrefix = "##"
 	for i := lines.line; i < len(lines.text); i++ {
 		if strings.HasPrefix(lines.text[i], sectionPrefix) {
 			break
@@ -324,7 +308,7 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 		}
 	}
 
-	err = parseHeader(doc, isMarkdown, lines)
+	err = parseHeader(doc, lines)
 	if err != nil {
 		return nil, err
 	}
@@ -353,25 +337,17 @@ func Parse(r io.Reader, name string, mode ParseMode) (*Doc, error) {
 }
 
 // isHeading matches any section heading.
-var (
-	isHeadingLegacy   = regexp.MustCompile(`^\*+( |$)`)
-	isHeadingMarkdown = regexp.MustCompile(`^\#+( |$)`)
-)
+var isHeading = regexp.MustCompile(`^\#+( |$)`)
 
 // lesserHeading returns true if text is a heading of a lesser or equal level
 // than that denoted by prefix.
-func lesserHeading(isHeading *regexp.Regexp, text, prefix string) bool {
+func lesserHeading(text, prefix string) bool {
 	return isHeading.MatchString(text) && !strings.HasPrefix(text, prefix+prefix[:1])
 }
 
 // parseSections parses Sections from lines for the section level indicated by
 // number (a nil number indicates the top level).
 func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int) ([]Section, error) {
-	isMarkdown := prefix[0] == '#'
-	isHeading := isHeadingLegacy
-	if isMarkdown {
-		isHeading = isHeadingMarkdown
-	}
 	var sections []Section
 	for i := 1; ; i++ {
 		// Next non-empty line is title.
@@ -386,11 +362,11 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 			lines.back()
 			break
 		}
-		// Markdown sections can end in {#id} to set the HTML anchor for the section.
+		// Sections can end in {#id} to set the HTML anchor for the section.
 		// This is nicer than the default #TOC_1_2-style anchor.
 		title := strings.TrimSpace(text[len(prefix):])
 		id := ""
-		if rest, ok := strings.CutSuffix(title, "}"); isMarkdown && ok {
+		if rest, ok := strings.CutSuffix(title, "}"); ok {
 			if before, after, ok := strings.CutLast(rest, "{#"); ok {
 				title, id = strings.TrimSpace(before), after
 			}
@@ -401,48 +377,9 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 			ID:     id,
 		}
 		text, ok = lines.nextNonEmpty()
-		for ok && !lesserHeading(isHeading, text, prefix) {
+		for ok && !lesserHeading(text, prefix) {
 			var e Elem
-			r, _ := utf8.DecodeRuneInString(text)
 			switch {
-			case !isMarkdown && unicode.IsSpace(r):
-				i := strings.IndexFunc(text, func(r rune) bool {
-					return !unicode.IsSpace(r)
-				})
-				if i < 0 {
-					break
-				}
-				indent := text[:i]
-				var s []string
-				for ok && (strings.HasPrefix(text, indent) || text == "") {
-					if text != "" {
-						text = text[i:]
-					}
-					s = append(s, text)
-					text, ok = lines.next()
-				}
-				lines.back()
-				pre := strings.Join(s, "\n")
-				raw := pre
-				pre = strings.ReplaceAll(pre, "\t", "    ") // browsers treat tabs badly
-				pre = strings.TrimRightFunc(pre, unicode.IsSpace)
-				e = Text{Lines: []string{pre}, Pre: true, Raw: raw}
-			case !isMarkdown && strings.HasPrefix(text, "- "):
-				var b []string
-				for {
-					if strings.HasPrefix(text, "- ") {
-						b = append(b, text[2:])
-					} else if len(b) > 0 && strings.HasPrefix(text, " ") {
-						b[len(b)-1] += "\n" + strings.TrimSpace(text)
-					} else {
-						break
-					}
-					if text, ok = lines.next(); !ok {
-						break
-					}
-				}
-				lines.back()
-				e = List{Bullet: b}
 			case isSpeakerNote(text):
 				section.Notes = append(section.Notes, trimSpeakerNote(text))
 			case strings.HasPrefix(text, prefix+prefix[:1]+" ") || text == prefix+prefix[:1]:
@@ -477,7 +414,7 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 				}
 				e = t
 
-			case isMarkdown:
+			default:
 				// Collect Markdown lines, including blank lines and indented text.
 				var block []string
 				endLine, endBlock := lines.line-1, -1 // end is last non-empty line
@@ -524,26 +461,6 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 				}
 				e = HTML{HTML: html}
 
-			default:
-				// Collect text lines.
-				var block []string
-				for ok && strings.TrimSpace(text) != "" {
-					// Command breaks text block.
-					// Section heading breaks text block in markdown.
-					if text[0] == '.' || isSpeakerNote(text) {
-						lines.back()
-						break
-					}
-					if strings.HasPrefix(text, `\.`) { // Backslash escapes initial period.
-						text = text[1:]
-					}
-					block = append(block, text)
-					text, ok = lines.next()
-				}
-				if len(block) == 0 {
-					break
-				}
-				e = Text{Lines: block}
 			}
 			if e != nil {
 				section.Elem = append(section.Elem, e)
@@ -562,16 +479,14 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 	return sections, nil
 }
 
-func parseHeader(doc *Doc, isMarkdown bool, lines *Lines) error {
+func parseHeader(doc *Doc, lines *Lines) error {
 	var ok bool
 	// First non-empty line starts header.
 	doc.Title, ok = lines.nextNonEmpty()
 	if !ok {
 		return errors.New("unexpected EOF; expected title")
 	}
-	if isMarkdown {
-		doc.Title = strings.TrimSpace(strings.TrimPrefix(doc.Title, "#"))
-	}
+	doc.Title = strings.TrimSpace(strings.TrimPrefix(doc.Title, "#"))
 
 	for {
 		text, ok := lines.next()
@@ -710,6 +625,20 @@ func renderMarkdown(input []byte) (template.HTML, error) {
 		return "", err
 	}
 	return template.HTML(b.String()), nil
+}
+
+// renderInlineMarkdown renders s, a single line such as a caption or a link
+// label, as Markdown without the enclosing paragraph.
+func renderInlineMarkdown(s string) (template.HTML, error) {
+	html, err := renderMarkdown([]byte(s))
+	if err != nil {
+		return "", err
+	}
+	inner, ok := strings.CutPrefix(string(html), "<p>")
+	if inner, ok2 := strings.CutSuffix(inner, "</p>\n"); ok && ok2 {
+		return template.HTML(inner), nil
+	}
+	return html, nil
 }
 
 func fixupMarkdown(n ast.Node) {
