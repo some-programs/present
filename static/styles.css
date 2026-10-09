@@ -169,6 +169,9 @@
     display: block;
     transform: translateX(calc(2 * var(--slide-step)));
   }
+  .slides > article:is(.far-past, .past, .current, .next, .far-next):has(> .image) {
+    display: flex;
+  }
 }
 
 @media print {
@@ -190,6 +193,12 @@
     page-break-after: always;
 
     overflow: hidden;
+  }
+
+  /* Images are fitted to the slide, so it needs a height. */
+  .slides > article:has(> .image) {
+    display: flex;
+    aspect-ratio: 1100 / 700;
   }
 
   h2 {
@@ -362,6 +371,39 @@ article > .image,
 article > .video {
   text-align: center;
   margin-top: 40px;
+}
+
+/* A slide fits each image into the space left for it, keeping its aspect
+   ratio. The .image command can limit the size with fractions of the
+   slide's content area and with pixels, which the template passes on as
+   --image-width-frac, --image-height-frac, --image-width and
+   --image-height.
+
+   The img is a flex item of the slide itself. Its height starts as its
+   width divided by its aspect ratio, and shrinks to the space left on the
+   slide; object-fit then centres the image in the narrower box that leaves.
+   Either way the box is as tall as the image, so a caption follows it. */
+.slides > article:has(> .image) {
+  flex-direction: column;
+}
+.slides > article > .image {
+  display: contents;
+}
+.slides > article > .image > img {
+  flex: 0 1 auto;
+  min-height: 0;
+  width: min(
+    var(--image-width-frac, 1) * 100%,
+    var(--image-width, 1e6) * 1px
+  );
+  height: auto;
+  max-height: min(
+    var(--image-height-frac, 1) * 100%,
+    var(--image-height, 1e6) * 1px
+  );
+  align-self: center;
+  margin-top: 40px;
+  object-fit: contain;
 }
 
 article.background {

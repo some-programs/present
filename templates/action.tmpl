@@ -32,7 +32,11 @@ It determines how the formatting actions are rendered.
 {{end}}
 
 {{define "image"}}
-<div class="image">
+<div class="image" style="
+  {{- with .WidthFrac}}--image-width-frac: {{.}}; {{end}}
+  {{- with .HeightFrac}}--image-height-frac: {{.}}; {{end}}
+  {{- with .Width}}--image-width: {{.}}; {{end}}
+  {{- with .Height}}--image-height: {{.}}; {{end}}">
   <img src="{{.URL}}"{{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}}>
 </div>
 {{end}}
