@@ -214,7 +214,10 @@ export function updatePlay(e: StorageEvent) {
     case 'output-style': {
       // Sync resizing of playground output
       const out = document.querySelectorAll<HTMLElement>('.output')[i];
-      if (out) out.style.cssText = localStorage.getItem('output-style') ?? '';
+      if (out) {
+        out.style.cssText = localStorage.getItem('output-style') ?? '';
+        out.dataset.resized = ''; // so that it keeps its size, see play.ts
+      }
       return;
     }
   }

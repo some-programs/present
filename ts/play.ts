@@ -13,6 +13,7 @@ import {
 import {
   playgroundOutput,
   SocketTransport,
+  type OutputFunc,
   type Running,
   type Transport,
 } from './playground.js';
@@ -22,6 +23,11 @@ const minWidth = 135;
 const maxWidth = 990;
 const minHeight = 27;
 const maxHeight = 608;
+
+// How long the output panel of a run waits for the program's first output
+// before it shows, in milliseconds. Output within that time sizes the panel
+// before it is seen.
+const showDelay = 300;
 
 // text returns the program text in node, skipping buttons and line numbers.
 // A DIV or PRE, such as a line added while editing, starts a new line unless
@@ -111,6 +117,70 @@ function makeResizable(el: HTMLElement, onResize: () => void) {
   }
 }
 
+// fit grows the output panel el, keeping its bottom-right corner in place,
+// until the output in pre fits, the panel is as large as it may be, or it
+// reaches the padding of its slide. Lines that are still too long wrap.
+function fit(el: HTMLElement, pre: HTMLElement) {
+  const style = getComputedStyle(el);
+  const width = parseFloat(style.width);
+  const height = parseFloat(style.height);
+
+  // The slides may be scaled to fit the window, so convert what is measured
+  // on the screen into layout pixels.
+  const r = el.getBoundingClientRect();
+  const scale = r.width / el.offsetWidth || 1;
+
+  // Measure the output without wrapping, so that long lines count in full.
+  // scrollWidth is rounded, and a line a fraction of a pixel too long
+  // wraps, so measure the text itself.
+  pre.style.whiteSpace = 'pre';
+  const text = document.createRange();
+  text.selectNodeContents(pre);
+  const textWidth = Math.ceil(text.getBoundingClientRect().width / scale);
+  pre.style.whiteSpace = '';
+  const wantWidth = width + textWidth - pre.clientWidth;
+
+  let roomWidth = maxWidth;
+  let roomHeight = maxHeight;
+  const slide = el.closest('article');
+  if (slide) {
+    const s = slide.getBoundingClientRect();
+    const ss = getComputedStyle(slide);
+    let left = s.left + parseFloat(ss.paddingLeft) * scale;
+    // Keep the resize handles, which stick out of the panel, clear of the
+    // area that goes to the previous slide when clicked.
+    const prev = document.getElementById('prev-slide-area');
+    if (prev) {
+      left = Math.max(left, prev.getBoundingClientRect().right + 10 * scale);
+    }
+    roomWidth = (r.right - left) / scale;
+    roomHeight = (r.bottom - s.top) / scale - parseFloat(ss.paddingTop);
+    // r includes the panel's padding and border; width and height do not.
+    roomWidth -= el.offsetWidth - width;
+    roomHeight -= el.offsetHeight - height;
+  }
+
+  const w = Math.max(width, Math.min(wantWidth, maxWidth, roomWidth));
+  if (w > width) {
+    el.style.left = el.offsetLeft + width - w + 'px';
+    el.style.width = w + 'px';
+  }
+  // Wrapping at the new width decides how tall the output is.
+  const wantHeight = height + pre.scrollHeight - pre.clientHeight;
+  const h = Math.max(height, Math.min(wantHeight, maxHeight, roomHeight));
+  if (h > height) {
+    el.style.top = el.offsetTop + height - h + 'px';
+    el.style.height = h + 'px';
+  }
+}
+
+// unfit puts the output panel el back to its size from the style sheet.
+function unfit(el: HTMLElement) {
+  for (const p of ['left', 'top', 'width', 'height']) {
+    el.style.removeProperty(p);
+  }
+}
+
 function button(className: string, label: string, onClick: PlayHandler) {
   const b = document.createElement('button');
   b.className = className;
@@ -125,7 +195,12 @@ function init(transport: Transport, code: HTMLElement, index: number) {
   const output = document.createElement('div');
   const outpre = document.createElement('pre');
   const notesEnabled = !!window.notesEnabled;
+  // On slides the output panel floats over the slide, grows to fit the
+  // output and can be resized. Once it has been resized, it keeps its size.
+  const onSlide = code.closest('section.slides') !== null;
+  const autoFit = () => onSlide && output.dataset.resized === undefined;
   let running: Running | undefined;
+  let showTimer: number | undefined;
 
   const onKill: PlayHandler = () => {
     running?.Kill();
@@ -136,17 +211,40 @@ function init(transport: Transport, code: HTMLElement, index: number) {
     const race =
       !!e?.shiftKey || localStorage.getItem('play-shiftKey') === 'true';
     running?.Kill();
+    clearTimeout(showTimer);
+    // The panel is fitted to each run's output. A closed panel stays hidden
+    // until the program's first output, or for showDelay, so that it is
+    // first seen at its fitted size. An open one keeps its size and the
+    // previous output until then; the output is cleared on the 'start'
+    // write that comes before the first output.
+    const open = output.style.display === 'block';
+    let unfitted = false;
+    if (autoFit() && !open) {
+      unfit(output);
+      unfitted = true;
+      output.style.visibility = 'hidden';
+      showTimer = setTimeout(() => (output.style.visibility = ''), showDelay);
+    }
     output.style.display = 'block';
-    outpre.textContent = '';
+    if (!open) outpre.textContent = '';
     run1.style.display = 'none';
-    running = transport.Run(text(code), playgroundOutput(outpre), {
-      Race: race,
-    });
+    const write = playgroundOutput(outpre);
+    const output1: OutputFunc = (w) => {
+      clearTimeout(showTimer);
+      output.style.visibility = '';
+      if (autoFit() && !unfitted) unfit(output);
+      unfitted = true;
+      write(w);
+      if (autoFit()) fit(output, outpre);
+    };
+    running = transport.Run(text(code), output1, { Race: race });
     if (notesEnabled) updatePlayStorage('onRun', index, e);
   };
 
   const onClose: PlayHandler = () => {
     running?.Kill();
+    clearTimeout(showTimer);
+    output.style.visibility = '';
     output.style.display = 'none';
     run1.style.display = 'inline-block';
     if (notesEnabled) updatePlayStorage('onClose', index);
@@ -172,10 +270,9 @@ function init(transport: Transport, code: HTMLElement, index: number) {
   output.style.display = 'none';
   button1.after(output);
 
-  // On slides the output panel floats over the slide and can be resized.
-  const onSlide = code.closest('section.slides') !== null;
   if (onSlide) {
     makeResizable(output, () => {
+      output.dataset.resized = '';
       if (!notesEnabled) return;
       localStorage.setItem('play-index', String(index));
       localStorage.setItem('output-style', output.style.cssText);

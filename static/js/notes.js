@@ -180,8 +180,10 @@ export function updatePlay(e) {
         case 'output-style': {
             // Sync resizing of playground output
             const out = document.querySelectorAll('.output')[i];
-            if (out)
+            if (out) {
                 out.style.cssText = localStorage.getItem('output-style') ?? '';
+                out.dataset.resized = ''; // so that it keeps its size, see play.ts
+            }
             return;
         }
     }

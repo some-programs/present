@@ -540,6 +540,8 @@ div.output pre {
   width: 100%;
   height: 100%;
   overflow: auto;
+  /* Lines longer than the panel can grow to wrap, see fit in play.ts. */
+  white-space: pre-wrap;
 }
 div.output .stdout,
 div.output pre {
