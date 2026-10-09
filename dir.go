@@ -5,6 +5,8 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"html/template"
 	"io"
 	"io/fs"
@@ -31,25 +33,41 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	name := filepath.Join(*contentPath, r.URL.Path)
 	if isDoc(name) {
-		err := renderDoc(w, name)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		var buf bytes.Buffer
+		if err := renderDoc(&buf, name); err != nil {
+			serveError(w, r, name, err)
+			return
 		}
+		w.Write(buf.Bytes())
 		return
 	}
 	if isDir, err := dirList(w, name); err != nil {
-		addr, _, e := net.SplitHostPort(r.RemoteAddr)
-		if e != nil {
-			addr = r.RemoteAddr
-		}
-		log.Printf("request from %s: %s", addr, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serveError(w, r, name, err)
 		return
 	} else if isDir {
 		return
 	}
 	http.FileServer(http.Dir(*contentPath)).ServeHTTP(w, r)
+}
+
+// serveError logs err and replies with an error for the request for name.
+// If name itself does not exist, the reply is a plain 404. Otherwise the
+// error text is sent so that authors see mistakes such as an unknown
+// command, with the content directory removed from any paths in it.
+func serveError(w http.ResponseWriter, r *http.Request, name string, err error) {
+	addr, _, e := net.SplitHostPort(r.RemoteAddr)
+	if e != nil {
+		addr = r.RemoteAddr
+	}
+	log.Printf("request from %s: %s", addr, err)
+
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) && pathErr.Path == name && errors.Is(err, fs.ErrNotExist) {
+		http.NotFound(w, r)
+		return
+	}
+	root := filepath.Clean(*contentPath) + string(filepath.Separator)
+	http.Error(w, strings.ReplaceAll(err.Error(), root, ""), http.StatusInternalServerError)
 }
 
 func isDoc(path string) bool {

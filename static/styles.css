@@ -262,7 +262,7 @@
 /* Styles for slides */
 
 .slides > article {
-  font-family: 'Open Sans', Arial, sans-serif;
+  font-family: 'Roboto', Arial, sans-serif;
 
   color: black;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
@@ -373,7 +373,7 @@ pre {
   background: rgb(240, 240, 240);
   border: 1px solid rgb(224, 224, 224);
 
-  font-family: 'Droid Sans Mono', 'Courier New', monospace;
+  font-family: 'Roboto Mono', 'Courier New', monospace;
   font-size: 18px;
   line-height: 24px;
   letter-spacing: -1px;
@@ -389,7 +389,7 @@ pre.numbers span:before {
 
 code {
   font-size: 95%;
-  font-family: 'Droid Sans Mono', 'Courier New', monospace;
+  font-family: 'Roboto Mono', 'Courier New', monospace;
 
   color: black;
 }
@@ -540,7 +540,7 @@ figcaption {
 }
 
 #help {
-  font-family: 'Open Sans', Arial, sans-serif;
+  font-family: 'Roboto', Arial, sans-serif;
   text-align: center;
   color: white;
   background: #000;

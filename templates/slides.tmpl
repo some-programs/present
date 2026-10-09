@@ -6,6 +6,9 @@
   <head>
     <title>{{.Title}}</title>
     <meta charset='utf-8'>
+    <link rel='preload' href='/static/fonts/roboto-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
+    <link rel='preload' href='/static/fonts/robotomono-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
+    <link rel='stylesheet' href='/static/fonts.css'>
     <script>
       var notesEnabled = {{.NotesEnabled}};
     </script>
