@@ -77,7 +77,7 @@ func main() {
 		}
 	}
 
-	initPlayground(fsys, origin)
+	initPlayground(origin)
 	http.Handle("/static/", http.FileServer(http.FS(fsys)))
 
 	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {

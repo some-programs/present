@@ -506,24 +506,25 @@ div.output .buttons {
 }
 
 /* Output resize details */
-.ui-resizable-handle {
+.resize-handle {
   position: absolute;
+  touch-action: none;
 }
-.ui-resizable-n {
+.resize-n {
   cursor: n-resize;
   height: 7px;
   width: 100%;
   top: -5px;
   left: 0;
 }
-.ui-resizable-w {
+.resize-w {
   cursor: w-resize;
   width: 7px;
   left: -5px;
   top: 0;
   height: 100%;
 }
-.ui-resizable-nw {
+.resize-nw {
   cursor: nw-resize;
   width: 9px;
   height: 9px;

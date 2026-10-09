@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "description": "Builds static/js from the TypeScript sources in ts/.",
+  "scripts": {
+    "build": "tsc -p ts",
+    "watch": "tsc -p ts --watch"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

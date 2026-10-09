@@ -12,14 +12,13 @@
     <script>
       var notesEnabled = {{.NotesEnabled}};
     </script>
-    <script src='/static/slides.js'></script>
+    <script type='module' src='/static/js/slides.js'></script>
 
     {{if .NotesEnabled}}
     <script>
       var sections = {{.Sections}};
       var titleNotes = {{.TitleNotes}}
     </script>
-    <script src='/static/notes.js'></script>
     {{end}}
   </head>
 
@@ -72,7 +71,7 @@
     </div>
 
     {{if .PlayEnabled}}
-    <script src='/play.js'></script>
+    <script type='module' src='/static/js/play.js'></script>
     {{end}}
   </body>
 </html>
