@@ -8,7 +8,7 @@ To look at them, run present from the root of this repository:
 and open http://127.0.0.1:3999. Press N on a slide to open the speaker
 notes.
 
-- [intro.slide](intro.slide): the header, authors, Markdown text, speaker
+- [intro.slide](intro.slide): the header, authors, Markdown text, subsections, speaker
   notes, comments, `.link`, `.html` and `.iframe`.
 - [code.slide](code.slide): `.code` with addresses, `OMIT`, highlighting,
   `-numbers` and `-edit`, and `.play` with a Go program, a multi-file

@@ -43,6 +43,16 @@ $ go run golang.org/x/tools/cmd/present@latest
 
 \.play and the other commands start with a period; a backslash before it shows the line as text.
 
+## Subsections
+
+### A subsection starts with ###
+
+Text under the subsection.
+
+### Another subsection
+
+#### Deeper levels use ####, ##### and so on
+
 ## Links and HTML
 
 .link https://go.dev/ The **Go** website
@@ -58,4 +68,4 @@ $ go run golang.org/x/tools/cmd/present@latest
 
 - [code.slide](code.slide): showing and running code
 - [media.slide](media.slide): images, diagrams and video
-- [notes.article](notes.article): the article format, with subsections
+- [notes.article](notes.article): the article format
