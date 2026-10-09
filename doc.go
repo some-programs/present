@@ -33,3 +33,5 @@ The present file format is documented by the present package:
 https://pkg.go.dev/github.com/some-programs/present/pkg/present
 */
 package main
+
+//go:generate go run ./internal/readmegen
