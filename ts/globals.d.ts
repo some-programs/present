@@ -7,6 +7,8 @@ interface PresentSection {
 interface Window {
   // notesEnabled reports whether present runs with -notes.
   notesEnabled?: boolean;
+  // preloadEnabled reports whether present preloads slide media.
+  preloadEnabled?: boolean;
   // sections holds the slides' sections; set only when notes are enabled.
   sections?: PresentSection[] | null;
   // titleNotes holds the notes for the title slide; set only when notes are enabled.

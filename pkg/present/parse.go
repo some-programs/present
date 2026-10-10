@@ -40,10 +40,11 @@ func Template() *template.Template {
 func (d *Doc) Render(w io.Writer, t *template.Template) error {
 	data := struct {
 		*Doc
-		Template     *template.Template
-		PlayEnabled  bool
-		NotesEnabled bool
-	}{d, t, PlayEnabled, NotesEnabled}
+		Template       *template.Template
+		PlayEnabled    bool
+		NotesEnabled   bool
+		PreloadEnabled bool
+	}{d, t, PlayEnabled, NotesEnabled, PreloadEnabled}
 	return t.ExecuteTemplate(w, "root", data)
 }
 

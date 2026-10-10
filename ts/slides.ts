@@ -23,6 +23,7 @@ interface SlideEvent extends Event {
 }
 
 const notesEnabled = !!window.notesEnabled;
+const preloadEnabled = window.preloadEnabled !== false;
 
 let slideEls: NodeListOf<HTMLElement>;
 let curSlide = 0;
@@ -71,6 +72,8 @@ function updateSlides() {
 
   enableSlideFrames(curSlide - 1);
   enableSlideFrames(curSlide + 2);
+
+  preloadSlideWindow();
 
   updateHash();
 }
@@ -169,6 +172,54 @@ function handleTouchEnd() {
 function cancelTouch() {
   document.body.removeEventListener('touchmove', handleTouchMove, true);
   document.body.removeEventListener('touchend', handleTouchEnd, true);
+}
+
+/* Preloading media */
+
+const preloadedSlides = new Set<number>();
+
+function preloadMediaForSlide(no: number) {
+  if (preloadedSlides.has(no)) return;
+  const el = getSlideEl(no);
+  if (!el) return;
+  preloadedSlides.add(no);
+
+  // Preload and decode slide images
+  for (const img of el.querySelectorAll<HTMLImageElement>('img')) {
+    if (img.complete) {
+      img.decode?.().catch(() => {});
+    } else {
+      img.addEventListener('load', () => {
+        img.decode?.().catch(() => {});
+      });
+    }
+  }
+
+  // Preload background images
+  if (el.classList.contains('background')) {
+    const bg = el.style.backgroundImage;
+    const match = bg.match(/url\(["']?(.*?)["']?\)/);
+    if (match && match[1]) {
+      const bgImg = new Image();
+      bgImg.src = match[1];
+      bgImg.decode?.().catch(() => {});
+    }
+  }
+
+  // Preload and initialize video frames
+  for (const video of el.querySelectorAll<HTMLVideoElement>('video')) {
+    if (video.preload !== 'auto') {
+      video.preload = 'auto';
+    }
+  }
+}
+
+function preloadSlideWindow() {
+  if (!preloadEnabled) return;
+  // Preload current slide as well as upcoming and previous slides in the window
+  for (let offset = -1; offset <= 2; offset++) {
+    preloadMediaForSlide(curSlide + offset);
+  }
 }
 
 /* Preloading frames */

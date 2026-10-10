@@ -6,6 +6,7 @@ import { destSlideKey, setupNotes, storedSlide, toggleNotesWindow, updateNotes, 
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 const PM_TOUCH_SENSITIVITY = 15;
 const notesEnabled = !!window.notesEnabled;
+const preloadEnabled = window.preloadEnabled !== false;
 let slideEls;
 let curSlide = 0;
 /* Slide movement */
@@ -46,6 +47,7 @@ function updateSlides() {
     }, 301);
     enableSlideFrames(curSlide - 1);
     enableSlideFrames(curSlide + 2);
+    preloadSlideWindow();
     updateHash();
 }
 function storeSlide() {
@@ -128,6 +130,51 @@ function handleTouchEnd() {
 function cancelTouch() {
     document.body.removeEventListener('touchmove', handleTouchMove, true);
     document.body.removeEventListener('touchend', handleTouchEnd, true);
+}
+/* Preloading media */
+const preloadedSlides = new Set();
+function preloadMediaForSlide(no) {
+    if (preloadedSlides.has(no))
+        return;
+    const el = getSlideEl(no);
+    if (!el)
+        return;
+    preloadedSlides.add(no);
+    // Preload and decode slide images
+    for (const img of el.querySelectorAll('img')) {
+        if (img.complete) {
+            img.decode?.().catch(() => { });
+        }
+        else {
+            img.addEventListener('load', () => {
+                img.decode?.().catch(() => { });
+            });
+        }
+    }
+    // Preload background images
+    if (el.classList.contains('background')) {
+        const bg = el.style.backgroundImage;
+        const match = bg.match(/url\(["']?(.*?)["']?\)/);
+        if (match && match[1]) {
+            const bgImg = new Image();
+            bgImg.src = match[1];
+            bgImg.decode?.().catch(() => { });
+        }
+    }
+    // Preload and initialize video frames
+    for (const video of el.querySelectorAll('video')) {
+        if (video.preload !== 'auto') {
+            video.preload = 'auto';
+        }
+    }
+}
+function preloadSlideWindow() {
+    if (!preloadEnabled)
+        return;
+    // Preload current slide as well as upcoming and previous slides in the window
+    for (let offset = -1; offset <= 2; offset++) {
+        preloadMediaForSlide(curSlide + offset);
+    }
 }
 /* Preloading frames */
 // The real src of each iframe, which is unloaded while its slide is far away.

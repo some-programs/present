@@ -29,7 +29,7 @@ It determines how the formatting actions are rendered.
   {{- with .Width}}--image-width: {{.}}; {{end}}
   {{- with .Height}}--image-height: {{.}}; {{end}}">
   {{- if not .Missing}}
-  <img src="{{.URL}}"{{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}}>
+  <img src="{{.URL}}"{{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}} decoding="async">
   {{- end}}
   {{- with .Error}}
   <div class="image-error{{if not $.Missing}} stale no-print{{end}}">{{.}}</div>
@@ -39,7 +39,7 @@ It determines how the formatting actions are rendered.
 
 {{define "video"}}
 <div class="video">
-  <video {{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}} controls>
+  <video {{with .Height}} height="{{.}}"{{end}}{{with .Width}} width="{{.}}"{{end}} controls preload="none">
     <source src="{{.URL}}" type="{{.SourceType}}">
   </video>
 </div>

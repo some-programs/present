@@ -32,7 +32,11 @@ var embedFS embed.FS
 func main() {
 	flag.BoolVar(&present.PlayEnabled, "play", true, "enable playground (permit execution of arbitrary user code)")
 	flag.BoolVar(&present.NotesEnabled, "notes", false, "enable presenter notes (press 'N' from the browser to display them)")
+	noPreload := flag.Bool("no-preload", false, "disable preloading slide media (images and video)")
 	flag.Parse()
+	if *noPreload {
+		present.PreloadEnabled = false
+	}
 	if *hot && present.NotesEnabled {
 		log.Fatal("-hot and -notes cannot be used together")
 	}

@@ -28,6 +28,9 @@ var PlayEnabled = false
 // present user interface.
 var NotesEnabled = false
 
+// PreloadEnabled specifies whether media (images and videos) should be preloaded.
+var PreloadEnabled = true
+
 func init() {
 	Register("code", parseCode)
 	Register("play", parseCode)
