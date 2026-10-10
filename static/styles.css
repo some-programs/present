@@ -188,12 +188,18 @@
     page-break-after: always;
 
     overflow: hidden;
+
+    aspect-ratio: 1100 / 700;
+    box-sizing: border-box;
+    padding: 30px 45px;
+  }
+  .slides.layout-faux-widescreen > article {
+    padding: 40px 160px;
   }
 
-  /* Images are fitted to the slide, so it needs a height. */
+  /* Images are fitted to the slide, so it needs flex layout. */
   .slides > article:has(> .image, > .fontsize > .image) {
     display: flex;
-    aspect-ratio: 1100 / 700;
   }
 
   h2 {
