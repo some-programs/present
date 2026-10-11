@@ -16,7 +16,16 @@ Both families are licensed under the SIL Open Font License 1.1:
 font, and `templates/slides.tmpl` preloads `roboto-normal-latin.woff2` and
 `jetbrainsmono-normal-latin.woff2`.
 
-To refresh the files, fetch this URL with a current browser's User-Agent:
+`ttf/` holds the same families as TrueType files for installing on a
+computer, which present serves as `/download/fonts.tar`: Roboto v3.016 (the
+`hinted/static` directory of the github.com/googlefonts/roboto-classic
+release) and JetBrains Mono v2.304 (`fonts/ttf` of the
+github.com/JetBrains/JetBrainsMono release, without the JetBrainsMonoNL
+files). They are static fonts, one file per weight and style, rather than
+the variable fonts of the releases, because every program supports them,
+including those that render diagrams. The file names are the upstream ones.
+
+To refresh the WOFF2 files, fetch this URL with a current browser's User-Agent:
 
     https://fonts.googleapis.com/css2?family=Roboto:ital,wdth,wght@0,75..100,100..900;1,75..100,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap
 

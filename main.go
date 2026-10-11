@@ -99,6 +99,7 @@ func main() {
 	initPlayground(origin)
 	initHot()
 	http.Handle("/static/", hashfs.FileServer(staticFS))
+	http.Handle("/download/fonts.tar", fontsTarHandler(fsys))
 
 	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {
 		log.Print(localhostWarning)

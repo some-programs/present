@@ -310,7 +310,7 @@ A Mermaid file sets its font in a config block at its start. Mermaid uses one fo
 
 The same block can set "theme: neutral", which draws in grays rather than Mermaid's default purple and yellow.
 
-The SVG is shown as an image, which cannot use the fonts that present serves to the page, so a diagram uses the fonts installed on the computer showing it, falling back to the system's sans-serif or monospace font. Both tools also size labels with the fonts installed where present runs. Install Roboto and JetBrains Mono on both for diagrams to match the slides and their labels to fit.
+The SVG is shown as an image, which cannot use the fonts that present serves to the page, so a diagram uses the fonts installed on the computer showing it, falling back to the system's sans-serif or monospace font. Both tools also size labels with the fonts installed where present runs. Install Roboto and JetBrains Mono on both for diagrams to match the slides and their labels to fit. A running present serves both as TrueType files, with their licenses, at /download/fonts.tar.
 
 ### Presenter Notes
 

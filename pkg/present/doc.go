@@ -364,7 +364,8 @@ serves to the page, so a diagram uses the fonts installed on the computer
 showing it, falling back to the system's sans-serif or monospace font.
 Both tools also size labels with the fonts installed where present runs.
 Install Roboto and JetBrains Mono on both for diagrams to match the slides
-and their labels to fit.
+and their labels to fit. A running present serves both as TrueType files,
+with their licenses, at /download/fonts.tar.
 
 # Presenter Notes
 
