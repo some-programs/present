@@ -1,0 +1,22 @@
+<h1>Examples</h1>
+
+<p>Presentations that show every feature of present, exported with
+<code>present export -source</code>. Press S on a slide to see its source.</p>
+
+{{with .Slides}}
+<h4>Slide decks:</h4>
+<dl>
+{{range .}}
+<dd><a href="{{.Path}}">{{.Name}}</a>: {{.Title}}</dd>
+{{end}}
+</dl>
+{{end}}
+
+{{with .Articles}}
+<h4>Articles:</h4>
+<dl>
+{{range .}}
+<dd><a href="{{.Path}}">{{.Name}}</a>: {{.Title}}</dd>
+{{end}}
+</dl>
+{{end}}

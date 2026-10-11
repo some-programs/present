@@ -7,6 +7,8 @@
 Present is a simple presentation tool for slides written as plain text files
 with Markdown, and shown in the browser.
 
+Source: [github.com/some-programs/present](https://github.com/some-programs/present)
+
 ## Features
 
 - Slides and articles written in plain-text Markdown, shown in the browser.
@@ -16,10 +18,6 @@ with Markdown, and shown in the browser.
 - Presenter notes window, kept in sync with the slides.
 - Hot reload while you write.
 - Single binary that works offline.
-
-![A slide running a Go program, with its source shown beside it](_screenshots/run-code.png)
-
-![A slide with Graphviz and Mermaid diagrams, with their source shown beside it](_screenshots/diagram.png)
 
 ## This is a fork
 
@@ -34,6 +32,11 @@ padding outside of the slide body is slightly reduced. Presentations in the old
 syntax can be converted to Markdown with `present convert-legacy`.
 
 ## Start demo
+
+For an online preview, see the
+[examples on GitHub Pages](https://some-programs.github.io/present/examples/),
+exported with `present export -source`. Code cannot be run there, and there
+are no presenter notes.
 
 The quickest way to learn present is to look at the [examples](examples):
 presentations that show every feature, from Markdown text and speaker notes

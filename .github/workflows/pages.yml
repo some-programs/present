@@ -1,5 +1,5 @@
-# Exports the example presentations with present export and publishes them
-# to GitHub Pages.
+# Publishes the README, and the example presentations exported with present
+# export, to GitHub Pages.
 name: pages
 
 on:
@@ -28,43 +28,8 @@ jobs:
       # installing dot and mmdc.
       - name: Export examples
         run: go run . export -norender -source -o _site examples/*.slide examples/*.article
-      - name: Write index
-        run: |
-          {
-            cat <<'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>present examples</title>
-            <link type="text/css" rel="stylesheet" href="static/dir.css">
-          </head>
-          <body>
-          <div id="topbar"><div class="container">
-          <div id="heading"><a href="https://github.com/some-programs/present">present</a></div>
-          </div></div>
-          <div id="page">
-            <h1>Examples</h1>
-            <p>Presentations that show every feature of present, exported with <code>present export -source</code>. Press S on a slide to see its source.</p>
-          EOF
-            for kind in slide article; do
-              case $kind in
-                slide) echo '  <h4>Slide decks:</h4>' ;;
-                article) echo '  <h4>Articles:</h4>' ;;
-              esac
-              echo '  <dl>'
-              for f in examples/*.$kind; do
-                name=$(basename "$f" .$kind)
-                title=$(head -n 1 "$f" | sed -e 's/^# *//' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
-                echo "  <dd><a href=\"examples/$name.html\">$name.$kind</a>: $title</dd>"
-              done
-              echo '  </dl>'
-            done
-            echo '</div>'
-            echo '</body>'
-            echo '</html>'
-          } > _site/index.html
+      - name: Write README and examples index
+        run: go run ./internal/readmegen -site _site
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
