@@ -1,0 +1,80 @@
+# Exports the example presentations with present export and publishes them
+# to GitHub Pages.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      # The SVG files of the diagrams are checked in, so -norender spares
+      # installing dot and mmdc.
+      - name: Export examples
+        run: go run . export -norender -source -o _site examples/*.slide examples/*.article
+      - name: Write index
+        run: |
+          {
+            cat <<'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>present examples</title>
+            <link type="text/css" rel="stylesheet" href="static/dir.css">
+          </head>
+          <body>
+          <div id="topbar"><div class="container">
+          <div id="heading"><a href="https://github.com/some-programs/present">present</a></div>
+          </div></div>
+          <div id="page">
+            <h1>Examples</h1>
+            <p>Presentations that show every feature of present, exported with <code>present export -source</code>. Press S on a slide to see its source.</p>
+          EOF
+            for kind in slide article; do
+              case $kind in
+                slide) echo '  <h4>Slide decks:</h4>' ;;
+                article) echo '  <h4>Articles:</h4>' ;;
+              esac
+              echo '  <dl>'
+              for f in examples/*.$kind; do
+                name=$(basename "$f" .$kind)
+                title=$(head -n 1 "$f" | sed -e 's/^# *//' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+                echo "  <dd><a href=\"examples/$name.html\">$name.$kind</a>: $title</dd>"
+              done
+              echo '  </dl>'
+            done
+            echo '</div>'
+            echo '</body>'
+            echo '</html>'
+          } > _site/index.html
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
