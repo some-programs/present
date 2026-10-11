@@ -203,7 +203,7 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	if present.NotesEnabled {
 		log.Println("Notes are enabled, press 'N' from the browser to display them.")
 	}
-	log.Print(http.Serve(ln, nil))
+	log.Print(http.Serve(ln, compressHandler(http.DefaultServeMux)))
 	return 1
 }
 
