@@ -258,8 +258,8 @@ Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or
 .mermaid), rendered with the Mermaid CLI, mmdc. The present program
 renders it whenever the diagram file has changed, and marks the SVG with a
 hash of the diagram file to tell. If the tool is missing or fails, an
-earlier SVG is shown, and the error appears in the presenter notes window;
-without an earlier SVG, the error takes the image's place.
+earlier SVG is shown, and the error appears in the presenter notes window,
+or at the top of the page with -hot; without an earlier SVG, the error takes the image's place.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd

@@ -20,7 +20,7 @@ Present assumes presentation authors are trusted, and should not be used with un
 
 Programs in .play blocks are built and run on the machine running present, and their output is streamed to the browser over a WebSocket. Run with -play=false to disable this.
 
-With -hot, an open presentation reloads in the browser whenever its file, or a file it uses, changes. It opens at the first slide that changed, and a presentation that no longer parses shows its error over the old slides. -hot cannot be used with -notes.
+With -hot, an open presentation reloads in the browser whenever its file, or a file it uses, changes. It opens at the first slide that changed, and a presentation that no longer parses shows its error over the old slides, as does a diagram that cannot be rendered. -hot cannot be used with -notes.
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
@@ -227,7 +227,7 @@ The first argument is always the file name. On slides, the image is fitted into 
 	.image images/janet.jpg _ 300
 	.image images/janet.jpg 0.4 _
 
-A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window; without an earlier SVG, the error takes the image's place.
+A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window, or at the top of the page with -hot; without an earlier SVG, the error takes the image's place.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd

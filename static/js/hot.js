@@ -2,7 +2,8 @@
 // This module reloads the page when present runs with -hot and the
 // presentation, or a file it uses, changes. The reloaded slides open at the
 // slide that changed (see changedSlide). If the presentation no longer
-// renders, the page stays as it is and shows the error instead.
+// renders, the page stays as it is and shows the error instead. Errors
+// rendering diagrams are shown the same way.
 //
 // The templates load this module before slides.js, so that it sees the
 // slides as the server sent them, before the other modules change them.
@@ -46,6 +47,12 @@ function showError(text) {
     }
     el.textContent = text;
 }
+// Show why diagrams could not be rendered, since without -notes there is no
+// presenter notes window to show it when an earlier rendering is shown
+// instead.
+const imageErrors = new Set(Array.from(document.querySelectorAll('.image-error'), (el) => el.textContent));
+if (imageErrors.size > 0)
+    showError(Array.from(imageErrors).join('\n\n'));
 async function reload() {
     let res;
     let text;

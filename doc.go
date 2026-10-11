@@ -14,8 +14,8 @@ and their output is streamed to the browser over a WebSocket. Run with
 
 With -hot, an open presentation reloads in the browser whenever its file, or
 a file it uses, changes. It opens at the first slide that changed, and a
-presentation that no longer parses shows its error over the old slides.
--hot cannot be used with -notes.
+presentation that no longer parses shows its error over the old slides, as
+does a diagram that cannot be rendered. -hot cannot be used with -notes.
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows
 the SVG file of the same name, which present renders with dot or mmdc

@@ -453,7 +453,8 @@ article > .fontsize > .video {
 
 /* Why an image could not be made from its diagram source. It takes the
    image's place if there is no earlier rendering; otherwise the earlier
-   rendering is shown, and the error only in the presenter notes window. */
+   rendering is shown, and the error only in the presenter notes window
+   (and, with -hot, by hot.js). */
 .image-error {
   margin-top: 40px;
   padding: 5px 10px;
