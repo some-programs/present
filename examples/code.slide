@@ -39,6 +39,18 @@ Each word marks its own group of lines. This file also has `// HLmain`:
 
 .code -edit code/hello/main.go
 
+## Running code locally
+
+The rest of these slides run programs with `.play`. That needs present running
+on your own machine: pages written by `present export`, such as these examples
+on GitHub Pages, only show the code, without a Run button.
+
+To run the programs, start present locally:
+
+	go run github.com/some-programs/present@latest serve -doc
+
+Then open http://127.0.0.1:3999 and choose Examples.
+
 ## Running Go
 
 `.play` runs the program on the machine running present. Click Run, or press shift+enter:
