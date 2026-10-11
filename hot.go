@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -36,7 +35,7 @@ func initHot() {
 // the files to stay the same for one check, since editors may save a file in
 // several steps.
 func hotHandler(w http.ResponseWriter, r *http.Request) {
-	name := filepath.Join(*contentPath, filepath.FromSlash(path.Clean("/"+r.URL.Query().Get("doc"))))
+	name := contentFile(r.URL.Query().Get("doc"))
 	if !isDoc(name) {
 		http.NotFound(w, r)
 		return
@@ -139,7 +138,7 @@ func appendURLFile(files []string, dir, ref string) []string {
 		return files
 	}
 	if strings.HasPrefix(u.Path, "/") {
-		dir = *contentPath
+		return append(files, contentFile(u.Path))
 	}
 	return append(files, filepath.Join(dir, filepath.FromSlash(u.Path)))
 }

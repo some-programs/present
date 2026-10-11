@@ -6,7 +6,11 @@ To look at them, run present from the root of this repository:
     go run . -content examples -notes
 
 and open http://127.0.0.1:3999. Press N on a slide to open the speaker
-notes.
+notes. Without a checkout, run
+
+    go run github.com/some-programs/present@latest -doc -notes
+
+and open Examples in the Documentation section of the index.
 
 - [intro.slide](intro.slide): the header, authors, Markdown text, tables, `.fontsize`,
   subsections, speaker notes, comments, `.link`, `.html` and `.iframe`.
@@ -22,6 +26,3 @@ The diagrams in [diagrams](diagrams) are rendered to the SVG files next to
 them with `dot` and `mmdc` when a slide shows them. The SVG files are
 checked in, so the slides also work without those tools, or with
 `-norender`.
-
-The Go programs are a module of their own, so that they stay out of the
-present module's packages.

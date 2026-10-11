@@ -33,11 +33,19 @@ It started as a verbatim copy of it at commit
 
 The quickest way to learn present is to look at the [examples](examples):
 presentations that show every feature, from Markdown text and speaker notes
-to runnable code, diagrams and video. From a checkout of this repository, run
+to runnable code, diagrams and video. They are built into present, so one
+line downloads and runs the latest version and shows them along with this
+documentation:
+
+    go run github.com/some-programs/present@latest -doc -notes
+
+Then open http://127.0.0.1:3999. The index lists the presentations in the
+current directory, below links to the documentation and the examples. From a
+checkout of this repository, run
 
     go run . -content examples -notes
 
-and open http://127.0.0.1:3999.
+to show the examples there instead.
 
 `
 

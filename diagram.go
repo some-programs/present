@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -87,7 +86,7 @@ func renderSectionDiagrams(elems []present.Elem, docFile string) {
 			svg, err := renderDiagram(src, out)
 			if err != nil {
 				log.Print(err)
-				e.Error = strings.ReplaceAll(err.Error(), filepath.Clean(*contentPath)+string(filepath.Separator), "")
+				e.Error = trimContentDirs(err.Error())
 			}
 			e.Missing = svg == nil
 			if svg != nil {

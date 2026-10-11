@@ -23,8 +23,9 @@ whenever the diagram file changes. With -norender, present does not render
 them, and shows the existing SVG files as they are; -dot= or -mmdc= does
 the same for one kind of diagram.
 
-With -doc, the Talks page links to this documentation, served at /_doc, for
-reading it next to the presentations being written.
+With -doc, the Talks page lists this documentation, served at /_doc, and
+the example presentations, which are built into present and served at
+/_examples, for reading them next to the presentations being written.
 
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:

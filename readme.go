@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/yuin/goldmark/v2/ast"
 	"github.com/yuin/goldmark/v2/extension"
@@ -16,21 +17,24 @@ import (
 	"github.com/yuin/goldmark/v2/text"
 )
 
-var showDoc = flag.Bool("doc", false, "serve the present documentation (README.md) at /_doc and link to it from the Talks page")
+var showDoc = flag.Bool("doc", false, "serve the present documentation (README.md) at /_doc and the example presentations at /_examples, and list them on the Talks page")
 
 //go:embed README.md
 var readme []byte
 
-// repoURL is the base that relative links in README.md, such as to the
-// examples directory, are resolved against, since the files they point
-// to are not served by present.
+// repoURL is the base that relative links in README.md are resolved
+// against, since the files they point to are not served by present,
+// except for the examples.
 const repoURL = "https://github.com/some-programs/present/blob/main/"
 
-// initDoc registers the handler that serves README.md as HTML, if -doc is
-// set.
+// initDoc registers the handler that serves README.md as HTML, and writes
+// out the examples for dirHandler to serve, if -doc is set.
 func initDoc(fsys fs.FS, staticURL func(path string) string) error {
 	if !*showDoc {
 		return nil
+	}
+	if err := initExamples(); err != nil {
+		return err
 	}
 	body, err := renderReadme(readme)
 	if err != nil {
@@ -54,7 +58,8 @@ func initDoc(fsys fs.FS, staticURL func(path string) string) error {
 }
 
 // renderReadme renders the Markdown of README.md as HTML, with relative
-// links resolved against repoURL.
+// links to the examples pointing at examplesPath, and other relative links
+// resolved against repoURL.
 func renderReadme(src []byte) (template.HTML, error) {
 	doc := parser.New(parser.WithExtensions(extension.TableParser)).Parse(src)
 	base, err := url.Parse(repoURL)
@@ -63,9 +68,15 @@ func renderReadme(src []byte) (template.HTML, error) {
 	}
 	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if l, ok := n.(*ast.Link); ok && entering {
-			if u, err := url.Parse(l.Destination.Value(src)); err == nil && !u.IsAbs() && u.Path != "" {
-				l.Destination = text.NewSingleLineValueFromString(base.ResolveReference(u).String(), text.IdentityDecoder)
+			u, err := url.Parse(l.Destination.Value(src))
+			if err != nil || u.IsAbs() || u.Path == "" || strings.HasPrefix(u.Path, "/") {
+				return ast.WalkContinue, nil
 			}
+			dest := base.ResolveReference(u).String()
+			if u.Path == "examples" || strings.HasPrefix(u.Path, "examples/") {
+				dest = examplesPath + strings.TrimPrefix(u.Path, "examples")
+			}
+			l.Destination = text.NewSingleLineValueFromString(dest, text.IdentityDecoder)
 		}
 		return ast.WalkContinue, nil
 	})

@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -25,9 +26,10 @@ func init() {
 	http.HandleFunc("/", dirHandler)
 }
 
-// dirHandler serves a directory listing for the requested path, rooted at *contentPath.
+// dirHandler serves a directory listing for the requested path, rooted at
+// *contentPath, or at examplesDir for the examples with -doc.
 func dirHandler(w http.ResponseWriter, r *http.Request) {
-	name := filepath.Join(*contentPath, r.URL.Path)
+	name := contentFile(r.URL.Path)
 	if isDoc(name) {
 		render := renderDoc
 		if r.URL.Query().Has("notes") {
@@ -45,7 +47,7 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(buf.Bytes())
 		return
 	}
-	if isDir, err := dirList(w, name); err != nil {
+	if isDir, err := dirList(w, name, r.URL.Path); err != nil {
 		serveError(w, r, name, err)
 		return
 	} else if isDir {
@@ -54,13 +56,14 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	// Have browsers check for a newer file on every load, such as an
 	// image that has been replaced while the slides are open.
 	w.Header().Set("Cache-Control", "no-cache")
-	http.FileServer(http.Dir(*contentPath)).ServeHTTP(w, r)
+	prefix, dir := contentRoot(r.URL.Path)
+	http.StripPrefix(prefix, http.FileServer(http.Dir(dir))).ServeHTTP(w, r)
 }
 
 // serveError logs err and replies with an error for the request for name.
 // If name itself does not exist, the reply is a plain 404. Otherwise the
 // error text is sent so that authors see mistakes such as an unknown
-// command, with the content directory removed from any paths in it.
+// command, with the content directories removed from any paths in it.
 func serveError(w http.ResponseWriter, r *http.Request, name string, err error) {
 	addr, _, e := net.SplitHostPort(r.RemoteAddr)
 	if e != nil {
@@ -73,8 +76,7 @@ func serveError(w http.ResponseWriter, r *http.Request, name string, err error) 
 		http.NotFound(w, r)
 		return
 	}
-	root := filepath.Clean(*contentPath) + string(filepath.Separator)
-	http.Error(w, strings.ReplaceAll(err.Error(), root, ""), http.StatusInternalServerError)
+	http.Error(w, trimContentDirs(err.Error()), http.StatusInternalServerError)
 }
 
 func isDoc(path string) bool {
@@ -184,12 +186,13 @@ func parse(name string, mode present.ParseMode) (*present.Doc, error) {
 	return present.Parse(f, name, mode)
 }
 
-// dirList scans the given path and writes a directory listing to w.
+// dirList scans the given path, served at the URL path urlPath, and writes
+// a directory listing to w.
 // It parses the first part of each .slide file it encounters to display the
 // presentation title in the listing.
 // If the given path is not a directory, it returns (isDir == false, err == nil)
 // and writes nothing to w.
-func dirList(w io.Writer, name string) (isDir bool, err error) {
+func dirList(w io.Writer, name, urlPath string) (isDir bool, err error) {
 	fi, err := os.Stat(name)
 	if err != nil {
 		return false, err
@@ -202,8 +205,7 @@ func dirList(w io.Writer, name string) (isDir bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	strippedPath := strings.TrimPrefix(name, filepath.Clean(*contentPath))
-	strippedPath = strings.TrimPrefix(strippedPath, "/")
+	strippedPath := strings.Trim(path.Clean("/"+urlPath), "/")
 	d := &dirListData{Path: strippedPath}
 	for _, de := range entries {
 		e := dirEntry{
@@ -230,9 +232,6 @@ func dirList(w io.Writer, name string) (isDir bool, err error) {
 		} else if showFile(e.Name) {
 			d.Other = append(d.Other, e)
 		}
-	}
-	if d.Path == "." {
-		d.Path = ""
 	}
 	return true, dirListTemplate.Execute(w, d)
 }

@@ -14,11 +14,19 @@ It started as a verbatim copy of it at commit
 
 The quickest way to learn present is to look at the [examples](examples):
 presentations that show every feature, from Markdown text and speaker notes
-to runnable code, diagrams and video. From a checkout of this repository, run
+to runnable code, diagrams and video. They are built into present, so one
+line downloads and runs the latest version and shows them along with this
+documentation:
+
+    go run github.com/some-programs/present@latest -doc -notes
+
+Then open http://127.0.0.1:3999. The index lists the presentations in the
+current directory, below links to the documentation and the examples. From a
+checkout of this repository, run
 
     go run . -content examples -notes
 
-and open http://127.0.0.1:3999.
+to show the examples there instead.
 
 ## Command
 
@@ -32,7 +40,7 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
-With -doc, the Talks page links to this documentation, served at /\_doc, for reading it next to the presentations being written.
+With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written.
 
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 

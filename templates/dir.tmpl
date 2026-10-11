@@ -17,8 +17,12 @@
 
   {{with .Path}}<h2>{{.}}</h2>{{end}}
 
-  {{if doc}}
-  <p><a href="/_doc">Documentation</a>: how to write presentations and run present</p>
+  {{if and doc (not .Path)}}
+  <h4>Documentation:</h4>
+  <dl>
+  <dd><a href="/_doc">README</a>: how to write presentations and run present</dd>
+  <dd><a href="/_examples">Examples</a>: presentations that show every feature, and the files they use</dd>
+  </dl>
   {{end}}
 
   {{with .Articles}}
@@ -54,6 +58,13 @@
   {{range .}}
   <dd><a href="/{{.Path}}">{{.Name}}</a></dd>
   {{end}}
+  </dl>
+  {{end}}
+
+  {{if and doc (not .Path)}}
+  <h4>Fonts:</h4>
+  <dl>
+  <dd><a href="/download/fonts.tar">fonts.tar</a>: Roboto and JetBrains Mono, for diagrams to match the slides</dd>
   </dl>
   {{end}}
 
