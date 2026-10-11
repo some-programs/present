@@ -193,7 +193,6 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		log.Fatalf("Failed to render documentation: %v", err)
 	}
 	http.Handle("/static/", hashfs.FileServer(staticFS))
-	http.Handle("/download/fonts.tar", fontsTarHandler(fsys))
 
 	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {
 		log.Print(localhostWarning)

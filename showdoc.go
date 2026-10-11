@@ -16,7 +16,7 @@ import (
 	"github.com/yuin/goldmark/v2/text"
 )
 
-var showDoc = serveFlags.Bool("doc", false, "serve the present documentation (README.md) at /_doc and the example presentations at /_examples, and list them on the Talks page")
+var showDoc = serveFlags.Bool("doc", false, "serve the present documentation (README.md) at /_doc, the example presentations at /_examples and the fonts at /download/fonts.tar, and list them on the Talks page")
 
 //go:embed README.md
 var readme []byte
@@ -30,8 +30,9 @@ const repoURL = "https://github.com/some-programs/present/blob/main/"
 // against, since a page on repoURL is HTML, not the image itself.
 const rawURL = "https://raw.githubusercontent.com/some-programs/present/main/"
 
-// initDoc registers the handler that serves README.md as HTML, and writes
-// out the examples for dirHandler to serve, if -doc is set.
+// initDoc registers the handlers that serve README.md as HTML and the
+// fonts archive, and writes out the examples for dirHandler to serve, if
+// -doc is set.
 func initDoc(fsys fs.FS, staticURL func(path string) string) error {
 	if !*showDoc {
 		return nil
@@ -57,6 +58,7 @@ func initDoc(fsys fs.FS, staticURL func(path string) string) error {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(page.Bytes())
 	})
+	http.Handle("/download/fonts.tar", fontsTarHandler(fsys))
 	return nil
 }
 

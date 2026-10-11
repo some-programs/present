@@ -17,7 +17,7 @@ font, and `templates/slides.tmpl` preloads `roboto-normal-latin.woff2` and
 `jetbrainsmono-normal-latin.woff2`.
 
 `ttf/` holds the same families as TrueType files for installing on a
-computer, which present serves as `/download/fonts.tar`: Roboto v3.016 (the
+computer, which `present serve -doc` serves as `/download/fonts.tar`: Roboto v3.016 (the
 `hinted/static` directory of the github.com/googlefonts/roboto-classic
 release) and JetBrains Mono v2.304 (`fonts/ttf` of the
 github.com/JetBrains/JetBrainsMono release, without the JetBrainsMonoNL

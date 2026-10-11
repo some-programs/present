@@ -62,7 +62,7 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
-With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use.
+With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use. The fonts of the slides are served too, at /download/fonts.tar, for installing them.
 
 Other commands write new files from skeletons with present's defaults, and fail rather than overwrite a file:
 
@@ -401,7 +401,7 @@ A Mermaid flowchart can use both fonts, with a class for each, as the flowcharts
 
 Other types of Mermaid diagrams use one font: a state diagram cannot escape the comma of a class, so a font in it has no fallback, and the classes of a class diagram and the participants of a sequence diagram cannot set one.
 
-The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. A running present serves both as TrueType files, with their licenses, at /download/fonts.tar.
+The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. Present serve -doc serves both as TrueType files, with their licenses, at /download/fonts.tar.
 
 ### Presenter Notes
 

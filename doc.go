@@ -33,7 +33,9 @@ With -doc, the Talks page lists this documentation, served at /_doc, and
 the example presentations, which are built into present and served at
 /_examples, for reading them next to the presentations being written.
 Pressing S on a slide then shows its source beside it: the lines of the
-presentation file that make it, and the files that its commands use.
+presentation file that make it, and the files that its commands use. The
+fonts of the slides are served too, at /download/fonts.tar, for
+installing them.
 
 Other commands write new files from skeletons with present's defaults, and
 fail rather than overwrite a file:
