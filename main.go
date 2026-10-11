@@ -15,6 +15,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/benbjohnson/hashfs"
 	"github.com/some-programs/present/pkg/present"
 )
 
@@ -45,7 +46,18 @@ func main() {
 	if *basePath != "" {
 		fsys = os.DirFS(*basePath)
 	}
-	err := initTemplates(fsys)
+	staticFS := hashfs.NewFS(fsys)
+	staticURL := func(path string) string { return path }
+	if *basePath == "" {
+		// The embedded files cannot change while the server runs, so the
+		// templates can link to content-hashed names that browsers cache
+		// for good. Files under -base may be edited, and hashfs never
+		// rehashes a file, so those are linked to by their plain names.
+		staticURL = func(path string) string {
+			return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
+		}
+	}
+	err := initTemplates(fsys, staticURL)
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %v", err)
 	}
@@ -86,7 +98,7 @@ func main() {
 
 	initPlayground(origin)
 	initHot()
-	http.Handle("/static/", http.FileServer(http.FS(fsys)))
+	http.Handle("/static/", hashfs.FileServer(staticFS))
 
 	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {
 		log.Print(localhostWarning)

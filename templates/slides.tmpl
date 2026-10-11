@@ -8,18 +8,20 @@
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width,height=device-height,initial-scale=1'>
     <meta name='apple-mobile-web-app-capable' content='yes'>
+    {{importMap "/static/js/notes.js" "/static/js/playground.js"}}
     <link rel='preload' href='/static/fonts/roboto-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
     <link rel='preload' href='/static/fonts/jetbrainsmono-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
-    <link rel='stylesheet' href='/static/fonts.css'>
-    <link rel='stylesheet' href='/static/styles.css'>
+    <link rel='stylesheet' href='{{static "/static/fonts.css"}}'>
+    <link rel='stylesheet' href='{{static "/static/styles.css"}}'>
     <script>
       var notesEnabled = {{.NotesEnabled}};
       var preloadEnabled = {{.PreloadEnabled}};
     </script>
     {{if hot}}
-    <script type='module' src='/static/js/hot.js'></script>
+    <script type='module' src='{{static "/static/js/hot.js"}}'></script>
     {{end}}
-    <script type='module' src='/static/js/slides.js'></script>
+    <link rel='modulepreload' href='{{static "/static/js/notes.js"}}'>
+    <script type='module' src='{{static "/static/js/slides.js"}}'></script>
 
     {{if .NotesEnabled}}
     <script>
@@ -78,8 +80,27 @@
     </div>
 
     {{if .PlayEnabled}}
-    <script type='module' src='/static/js/play.js'></script>
+    <link rel='modulepreload' href='{{static "/static/js/playground.js"}}'>
+    <script type='module' src='{{static "/static/js/play.js"}}'></script>
     {{end}}
+  </body>
+</html>
+{{end}}
+
+{{define "notes"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <meta charset='utf-8'>
+    <link rel='stylesheet' href='{{static "/static/fonts.css"}}'>
+    <link rel='stylesheet' href='{{static "/static/notes.css"}}'>
+  </head>
+
+  <body>
+    <iframe id='presenter-slides'></iframe>
+    <div id='presenter-notes'></div>
+    <div id='timer'></div>
   </body>
 </html>
 {{end}}

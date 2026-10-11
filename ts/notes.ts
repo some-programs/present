@@ -135,43 +135,29 @@ export function storedSlide(): number {
   return parseInt(localStorage.getItem(destSlideKey()) ?? '', 10);
 }
 
+// openNotesWindow opens the notes window, which the server renders from
+// the "notes" template in templates/slides.tmpl, and fills it in once it
+// has loaded.
 function openNotesWindow() {
-  const w = window.open('', '', 'width=1000,height=700');
+  const w = window.open(
+    window.location.pathname + '?notes',
+    '',
+    'width=1000,height=700'
+  );
   if (!w) return;
   notesWindow = w;
-
-  // Hack to apply css. Requires existing html on notesWindow.
-  w.document.write("<div style='display:none;'></div>");
-
-  w.document.title = window.document.title;
-
-  const slides = w.document.createElement('iframe');
-  slides.id = 'presenter-slides';
-  slides.src = window.location.href;
-  w.document.body.appendChild(slides);
-
-  // setTimeout needed for Firefox
-  setTimeout(() => slides.focus(), 100);
-
-  const notes = w.document.createElement('div');
-  notes.id = 'presenter-notes';
-  notes.innerHTML = notesFor(storedSlide());
-  w.document.body.appendChild(notes);
-
-  const timer = w.document.createElement('div');
-  timer.id = 'timer';
-  w.document.body.appendChild(timer);
-
-  w.document.close();
-
-  const style = w.document.createElement('link');
-  style.rel = 'stylesheet';
-  style.href = '/static/notes.css';
-  w.document.head.appendChild(style);
-
-  // Update the notes when the parent window changes slides.
-  w.addEventListener('storage', updateNotes, false);
-
+  w.addEventListener('DOMContentLoaded', () => {
+    // instanceof would test against this window's HTMLIFrameElement.
+    const slides =
+      w.document.querySelector<HTMLIFrameElement>('#presenter-slides');
+    if (!slides) return;
+    slides.src = window.location.href;
+    // setTimeout needed for Firefox
+    setTimeout(() => slides.focus(), 100);
+    updateNotes();
+    // Update the notes when the parent window changes slides.
+    w.addEventListener('storage', updateNotes, false);
+  });
   startTimer();
 }
 

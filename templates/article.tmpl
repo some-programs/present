@@ -5,10 +5,11 @@
 <html>
   <head>
     <title>{{.Title}}</title>
-    <link type="text/css" rel="stylesheet" href="/static/article.css">
+    <link type="text/css" rel="stylesheet" href="{{static "/static/article.css"}}">
     <meta charset='utf-8'>
+    {{importMap "/static/js/notes.js" "/static/js/playground.js"}}
     {{if hot}}
-    <script type='module' src='/static/js/hot.js'></script>
+    <script type='module' src='{{static "/static/js/hot.js"}}'></script>
     {{end}}
   </head>
 
@@ -44,7 +45,9 @@
     </div>
 
     {{if .PlayEnabled}}
-    <script type='module' src='/static/js/play.js'></script>
+    <link rel='modulepreload' href='{{static "/static/js/notes.js"}}'>
+    <link rel='modulepreload' href='{{static "/static/js/playground.js"}}'>
+    <script type='module' src='{{static "/static/js/play.js"}}'></script>
     {{end}}
   </body>
 </html>

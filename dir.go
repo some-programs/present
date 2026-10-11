@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"html/template"
 	"io"
@@ -28,8 +29,16 @@ func init() {
 func dirHandler(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Join(*contentPath, r.URL.Path)
 	if isDoc(name) {
+		render := renderDoc
+		if r.URL.Query().Has("notes") {
+			if !present.NotesEnabled || filepath.Ext(name) != ".slide" {
+				http.NotFound(w, r)
+				return
+			}
+			render = renderNotes
+		}
 		var buf bytes.Buffer
-		if err := renderDoc(&buf, name); err != nil {
+		if err := render(&buf, name); err != nil {
 			serveError(w, r, name, err)
 			return
 		}
@@ -82,7 +91,10 @@ var (
 	contentTemplate map[string]*template.Template
 )
 
-func initTemplates(fsys fs.FS) error {
+// initTemplates parses the templates in fsys. Templates link to static
+// resources through staticURL, which maps a path such as
+// "/static/styles.css" to the URL to serve it at.
+func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 	// Locate the template file.
 	actionTmpl := "templates/action.tmpl"
 
@@ -100,6 +112,10 @@ func initTemplates(fsys fs.FS) error {
 			"playable": playable,
 			"thankYou": func() bool { return *thankYou },
 			"hot":      func() bool { return *hot },
+			"static":   staticURL,
+			"importMap": func(paths ...string) (template.HTML, error) {
+				return importMap(paths, staticURL)
+			},
 		})
 		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
 			return err
@@ -108,7 +124,9 @@ func initTemplates(fsys fs.FS) error {
 	}
 
 	var err error
-	dirListTemplate, err = template.ParseFS(fsys, "templates/dir.tmpl")
+	dirListTemplate, err = template.New("dir.tmpl").
+		Funcs(template.FuncMap{"static": staticURL}).
+		ParseFS(fsys, "templates/dir.tmpl")
 	return err
 }
 
@@ -127,6 +145,31 @@ func renderDoc(w io.Writer, docFile string) error {
 
 	// Execute the template.
 	return doc.Render(w, tmpl)
+}
+
+// renderNotes renders the presenter notes window of the slide
+// presentation docFile. The presentation's own window fills it in.
+func renderNotes(w io.Writer, docFile string) error {
+	doc, err := parse(docFile, present.TitlesOnly)
+	if err != nil {
+		return err
+	}
+	return contentTemplate[".slide"].ExecuteTemplate(w, "notes", doc)
+}
+
+// importMap returns an import map script element that has browsers load
+// the JavaScript modules at paths from staticURL, also when one module
+// imports another.
+func importMap(paths []string, staticURL func(string) string) (template.HTML, error) {
+	imports := make(map[string]string)
+	for _, p := range paths {
+		imports[p] = staticURL(p)
+	}
+	b, err := json.Marshal(map[string]any{"imports": imports})
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(`<script type="importmap">` + string(b) + `</script>`), nil
 }
 
 func parse(name string, mode present.ParseMode) (*present.Doc, error) {

@@ -100,7 +100,7 @@ func TestHotHandler(t *testing.T) {
 	hotInterval = 10 * time.Millisecond
 	t.Cleanup(func() { hotInterval = old })
 	// isDoc knows the presentation extensions from the templates.
-	if err := initTemplates(embedFS); err != nil {
+	if err := initTemplates(embedFS, func(path string) string { return path }); err != nil {
 		t.Fatal(err)
 	}
 
