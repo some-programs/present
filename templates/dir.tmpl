@@ -17,6 +17,10 @@
 
   {{with .Path}}<h2>{{.}}</h2>{{end}}
 
+  {{if doc}}
+  <p><a href="/_doc">Documentation</a>: how to write presentations and run present</p>
+  {{end}}
+
   {{with .Articles}}
   <h4>Articles:</h4>
   <dl>

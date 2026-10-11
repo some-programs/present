@@ -98,6 +98,9 @@ func main() {
 
 	initPlayground(origin)
 	initHot()
+	if err := initDoc(fsys, staticURL); err != nil {
+		log.Fatalf("Failed to render documentation: %v", err)
+	}
 	http.Handle("/static/", hashfs.FileServer(staticFS))
 	http.Handle("/download/fonts.tar", fontsTarHandler(fsys))
 

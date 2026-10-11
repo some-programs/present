@@ -125,7 +125,10 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 
 	var err error
 	dirListTemplate, err = template.New("dir.tmpl").
-		Funcs(template.FuncMap{"static": staticURL}).
+		Funcs(template.FuncMap{
+			"static": staticURL,
+			"doc":    func() bool { return *showDoc },
+		}).
 		ParseFS(fsys, "templates/dir.tmpl")
 	return err
 }

@@ -32,6 +32,8 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
+With -doc, the Talks page links to this documentation, served at /\_doc, for reading it next to the presentations being written.
+
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
 	.slide        // HTML5 slide presentation
