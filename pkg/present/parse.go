@@ -80,7 +80,6 @@ type Doc struct {
 	TitleNotes []string // the notes of the title slide; see Section.Notes
 	Sections   []Section
 	Tags       []string
-	OldURL     []string
 }
 
 // Author represents the person who wrote and/or is presenting the document.
@@ -544,8 +543,6 @@ func parseHeader(doc *Doc, lines *Lines) error {
 			}
 		} else if summary, ok := strings.CutPrefix(text, "Summary:"); ok {
 			doc.Summary = strings.TrimSpace(summary)
-		} else if oldURL, ok := strings.CutPrefix(text, "OldURL:"); ok {
-			doc.OldURL = append(doc.OldURL, strings.TrimSpace(oldURL))
 		} else if t, ok := parseTime(text); ok {
 			doc.Time = t
 		} else if doc.Subtitle == "" {

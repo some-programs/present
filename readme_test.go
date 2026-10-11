@@ -6,7 +6,7 @@ import (
 )
 
 func TestRenderReadme(t *testing.T) {
-	got, err := renderReadme([]byte("See [examples](examples), [intro](examples/intro.slide), [LICENSE](LICENSE), [Go](https://go.dev) and [x](#x).\n"))
+	got, err := renderReadme([]byte("See [examples](examples), [intro](examples/intro.slide), [LICENSE](LICENSE), [Go](https://go.dev) and [x](#x).\n\n![shot](_screenshots/run-code.png)\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,6 +16,7 @@ func TestRenderReadme(t *testing.T) {
 		`href="` + repoURL + `LICENSE"`,
 		`href="https://go.dev"`,
 		`href="#x"`,
+		`src="` + rawURL + `_screenshots/run-code.png"`,
 	} {
 		if !strings.Contains(string(got), want) {
 			t.Errorf("renderReadme output %q does not contain %q", got, want)

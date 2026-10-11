@@ -20,7 +20,6 @@ and other metadata, which looks like:
 	15:04 2 Jan 2006
 	Tags: foo, bar, baz
 	Summary: This is a great document you want to read.
-	OldURL: former-path-for-this-doc
 
 The title line must begin with "# ". The body of the file uses
 Markdown for text markup. Files in the legacy present markup, whose title
@@ -37,12 +36,8 @@ the document.
 
 The summary line gives a short summary used in blog feeds.
 
-The old URL line, which may be repeated, gives an older (perhaps relative) URL
-for this document.
-A server might use these to generate appropriate redirects.
-
 Only the title is required;
-the subtitle, date, tags, summary, and old URL lines are optional.
+the subtitle, date, tags, and summary lines are optional.
 The summary defaults to being empty.
 
 After the header come zero or more author blocks, like this:

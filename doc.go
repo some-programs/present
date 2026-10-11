@@ -55,8 +55,6 @@ the generated output. The supported formats are:
 	.slide        // HTML5 slide presentation
 	.article      // article format, such as a blog post
 
-The present file format is documented by the present package:
-https://pkg.go.dev/github.com/some-programs/present/pkg/present
 */
 package main
 
