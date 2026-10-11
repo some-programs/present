@@ -1,10 +1,10 @@
+"use strict";
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// This module adds Run, Kill and Close buttons to every div.playground on
-// the page and runs the code through the present server.
-import { playgroundHandlers, updatePlayStorage, } from './notes.js';
-import { playgroundOutput, SocketTransport, } from './playground.js';
+// This script adds Run, Kill and Close buttons to every div.playground on
+// the page and runs the code through the present server. It uses notes.js
+// and playground.js, which the templates load before it.
 // Size limits for the output panel while resizing, in CSS pixels.
 const minWidth = 135;
 const maxWidth = 990;

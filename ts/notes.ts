@@ -8,16 +8,16 @@
 
 // PlayAction names a playground button whose clicks are mirrored between
 // the windows.
-export type PlayAction = 'onRun' | 'onKill' | 'onClose';
+type PlayAction = 'onRun' | 'onKill' | 'onClose';
 
 // PlayHandler handles a playground button click. A mirrored click has no
 // event.
-export type PlayHandler = (e?: { shiftKey?: boolean }) => void;
+type PlayHandler = (e?: { shiftKey?: boolean }) => void;
 
 // playgroundHandlers holds each playground's handlers, indexed by the
 // playground's position on the page, so that mirrored clicks reach the
 // right one.
-export const playgroundHandlers: Record<PlayAction, PlayHandler[]> = {
+const playgroundHandlers: Record<PlayAction, PlayHandler[]> = {
   onRun: [],
   onKill: [],
   onClose: [],
@@ -40,7 +40,7 @@ const isParentWindow = window.parent === window;
 
 // setupNotes prepares the presenter notes. Call it only when notes are
 // enabled.
-export function setupNotes() {
+function setupNotes() {
   if (!isParentWindow) return;
   // When the parent window closes, remove our storage keys and close the
   // child window.
@@ -53,7 +53,7 @@ export function setupNotes() {
   });
 }
 
-export function toggleNotesWindow() {
+function toggleNotesWindow() {
   if (!isParentWindow) return;
   if (notesWindow) {
     notesWindow.close();
@@ -121,7 +121,7 @@ function updateTimer() {
 // destSlideKey returns the storage key holding the current slide, unique to
 // this presentation so that different presentations don't mix.
 // For golang.org/issue/24688.
-export function destSlideKey(): string {
+function destSlideKey(): string {
   let key = window.location.href;
   const slides = notesWindow?.document.getElementById('presenter-slides');
   if (slides instanceof HTMLIFrameElement) {
@@ -131,7 +131,7 @@ export function destSlideKey(): string {
 }
 
 // storedSlide returns the slide number stored under destSlideKey.
-export function storedSlide(): number {
+function storedSlide(): number {
   return parseInt(localStorage.getItem(destSlideKey()) ?? '', 10);
 }
 
@@ -164,7 +164,7 @@ function openNotesWindow() {
 // updateNotes shows the notes of the current slide. The server renders the
 // notes of every slide into the notes window, a block for each, and a last
 // one for slides without notes, such as the one -thankyou adds.
-export function updateNotes() {
+function updateNotes() {
   // When triggered from the parent window, notesWindow is null.
   // The storage event listener on notesWindow will update the notes.
   if (!notesWindow) return;
@@ -178,7 +178,7 @@ export function updateNotes() {
 /* Playground syncing */
 
 // updatePlay applies a playground change made in the other window.
-export function updatePlay(e: StorageEvent) {
+function updatePlay(e: StorageEvent) {
   const i = parseInt(localStorage.getItem('play-index') ?? '', 10);
 
   switch (e.key) {
@@ -209,7 +209,7 @@ export function updatePlay(e: StorageEvent) {
 // updatePlayStorage records a playground button click so the other window
 // can mirror it. Mirrored clicks reset the stored action so that successive
 // clicks of the same button are synced too.
-export function updatePlayStorage(
+function updatePlayStorage(
   action: PlayAction,
   index: number,
   e?: { shiftKey?: boolean }

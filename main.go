@@ -62,6 +62,7 @@ func init() {
 	for _, c := range newCommands {
 		commands = append(commands, command{c.name, c.help, c.run})
 	}
+	commands = append(commands, command{"export", "write presentations as static HTML pages", export})
 	commands = append(commands, command{"convert-legacy", "convert presentations from the legacy markup to Markdown", convertLegacy})
 }
 
@@ -132,8 +133,11 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	staticFS := hashfs.NewFS(fsys)
 	// The embedded files cannot change while the server runs, so the
 	// templates can link to content-hashed names that browsers cache for
-	// good.
+	// good. Fonts keep their plain names, by which fonts.css loads them.
 	staticURL := func(path string) string {
+		if strings.HasPrefix(path, "/static/fonts/") {
+			return path
+		}
 		return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
 	}
 	err := initTemplates(fsys, staticURL)

@@ -1,11 +1,11 @@
-// This module reloads the page when present runs with -hot and the
+// This script reloads the page when present runs with -hot and the
 // presentation, or a file it uses, changes. The reloaded slides open at the
 // slide that changed (see changedSlide). If the presentation no longer
 // renders, the page stays as it is and shows the error instead. Errors
 // rendering diagrams are shown the same way.
 //
-// The templates load this module before slides.js, so that it sees the
-// slides as the server sent them, before the other modules change them.
+// The templates load this script before slides.js, so that it sees the
+// slides as the server sent them, before the other scripts change them.
 
 const slidesSelector = 'section.slides > article';
 

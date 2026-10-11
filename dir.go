@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"html/template"
 	"io"
@@ -120,9 +119,6 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 			"thankYou":     func() bool { return *thankYou },
 			"hot":          func() bool { return *hot },
 			"static":       staticURL,
-			"importMap": func(paths ...string) (template.HTML, error) {
-				return importMap(paths, staticURL)
-			},
 		})
 		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
 			return err
@@ -141,17 +137,18 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 }
 
 // pageData is what the templates of presentations and articles are
-// executed with: what present.Doc.Render passes them, and with -doc the
-// source of each slide.
+// executed with: what present.Doc.Render passes them, and with -doc, or
+// export -source, the source of each slide.
 type pageData struct {
 	*present.Doc
 	Template       *template.Template
 	PlayEnabled    bool
 	NotesEnabled   bool
 	PreloadEnabled bool
+	InlineFonts    bool // fonts.css holds the fonts, so they are not preloaded
 
 	SourceFile string        // the presentation file, as sourceFileName names it
-	Sources    []slideSource // the source of each slide, with -doc
+	Sources    []slideSource // the source of each slide, with -doc or export -source
 }
 
 // renderDoc reads the present file docFile, served at the URL path
@@ -169,16 +166,7 @@ func renderDoc(w io.Writer, docFile, urlPath string) error {
 	}
 	renderDiagrams(doc, docFile)
 
-	// Find which template should be executed.
-	tmpl := contentTemplate[filepath.Ext(docFile)]
-
-	data := pageData{
-		Doc:            doc,
-		Template:       tmpl,
-		PlayEnabled:    present.PlayEnabled,
-		NotesEnabled:   present.NotesEnabled,
-		PreloadEnabled: present.PreloadEnabled,
-	}
+	data := newPageData(doc, docFile)
 	if *showDoc && filepath.Ext(docFile) == ".slide" {
 		data.SourceFile = sourceFileName(urlPath)
 		data.Sources, err = slideSources(doc, src, docFile, urlPath)
@@ -188,7 +176,19 @@ func renderDoc(w io.Writer, docFile, urlPath string) error {
 	}
 
 	// Execute the template.
-	return tmpl.ExecuteTemplate(w, "root", data)
+	return data.Template.ExecuteTemplate(w, "root", data)
+}
+
+// newPageData returns the data to execute the template for doc, read from
+// docFile, with.
+func newPageData(doc *present.Doc, docFile string) pageData {
+	return pageData{
+		Doc:            doc,
+		Template:       contentTemplate[filepath.Ext(docFile)],
+		PlayEnabled:    present.PlayEnabled,
+		NotesEnabled:   present.NotesEnabled,
+		PreloadEnabled: present.PreloadEnabled,
+	}
 }
 
 // renderNotes renders the presenter notes window of the slide
@@ -212,21 +212,6 @@ func sectionNotes(s present.Section) []string {
 		}
 	}
 	return notes
-}
-
-// importMap returns an import map script element that has browsers load
-// the JavaScript modules at paths from staticURL, also when one module
-// imports another.
-func importMap(paths []string, staticURL func(string) string) (template.HTML, error) {
-	imports := make(map[string]string)
-	for _, p := range paths {
-		imports[p] = staticURL(p)
-	}
-	b, err := json.Marshal(map[string]any{"imports": imports})
-	if err != nil {
-		return "", err
-	}
-	return template.HTML(`<script type="importmap">` + string(b) + `</script>`), nil
 }
 
 func parse(name string, mode present.ParseMode) (*present.Doc, error) {

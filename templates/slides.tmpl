@@ -8,9 +8,10 @@
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width,height=device-height,initial-scale=1'>
     <meta name='apple-mobile-web-app-capable' content='yes'>
-    {{importMap "/static/js/notes.js" "/static/js/playground.js" "/static/js/source.js"}}
-    <link rel='preload' href='/static/fonts/roboto-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
-    <link rel='preload' href='/static/fonts/jetbrainsmono-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
+    {{if not .InlineFonts}}
+    <link rel='preload' href='{{static "/static/fonts/roboto-normal-latin.woff2"}}' as='font' type='font/woff2' crossorigin>
+    <link rel='preload' href='{{static "/static/fonts/jetbrainsmono-normal-latin.woff2"}}' as='font' type='font/woff2' crossorigin>
+    {{end}}
     <link rel='stylesheet' href='{{static "/static/fonts.css"}}'>
     <link rel='stylesheet' href='{{static "/static/styles.css"}}'>
     <script>
@@ -18,10 +19,11 @@
       var preloadEnabled = {{.PreloadEnabled}};
     </script>
     {{if hot}}
-    <script type='module' src='{{static "/static/js/hot.js"}}'></script>
+    <script defer src='{{static "/static/js/hot.js"}}'></script>
     {{end}}
-    <link rel='modulepreload' href='{{static "/static/js/notes.js"}}'>
-    <script type='module' src='{{static "/static/js/slides.js"}}'></script>
+    <script defer src='{{static "/static/js/notes.js"}}'></script>
+    <script defer src='{{static "/static/js/source.js"}}'></script>
+    <script defer src='{{static "/static/js/slides.js"}}'></script>
   </head>
 
   <body>
@@ -99,12 +101,13 @@
     <div id="help">
       Use the left and right arrow keys or click the left and right
       edges of the page to navigate between slides.<br>
+      {{if .Sources}}Press 'S' to show or hide the source of the slide.<br>{{end}}
       (Press 'H' or navigate to hide this message.)
     </div>
 
     {{if .PlayEnabled}}
-    <link rel='modulepreload' href='{{static "/static/js/playground.js"}}'>
-    <script type='module' src='{{static "/static/js/play.js"}}'></script>
+    <script defer src='{{static "/static/js/playground.js"}}'></script>
+    <script defer src='{{static "/static/js/play.js"}}'></script>
     {{end}}
   </body>
 </html>

@@ -1,7 +1,8 @@
-// This module shows the source of the current slide beside it, with -doc.
+// This script shows the source of the current slide beside it, with -doc.
 // The server renders the source of every slide into the #source panel, a
-// block for each, and a last one for slides without a source; this module
-// shows the block of the current slide. S opens and closes the panel.
+// block for each, and a last one for slides without a source; this script
+// shows the block of the current slide. S opens and closes the panel, and
+// ?source=true or ?source=false in the URL opens or closes it on loading.
 
 const OPEN_CLASS = 'source-open';
 // Remembers an open panel across reloads, such as with -hot.
@@ -25,16 +26,16 @@ function setOpen(open: boolean) {
   }
 }
 
-export function toggleSource() {
+function toggleSource() {
   setOpen(!isOpen());
 }
 
-export function closeSource() {
+function closeSource() {
   if (isOpen()) setOpen(false);
 }
 
 // updateSource shows the source of slide no, counted from 0.
-export function updateSource(no: number) {
+function updateSource(no: number) {
   const i = Math.min(no, blocks.length - 1);
   if (i === shown) return;
   blocks.forEach((b, j) => (b.hidden = j !== i));
@@ -44,7 +45,7 @@ export function updateSource(no: number) {
 
 // setupSource sets up the source panel, and reports whether the page has
 // one.
-export function setupSource(): boolean {
+function setupSource(): boolean {
   const el = document.getElementById('source');
   if (!el) return false;
   panel = el;
@@ -57,6 +58,31 @@ export function setupSource(): boolean {
   } catch {
     // As if never opened.
   }
+  // The source parameter decides when the page is opened, but not when it
+  // is reloaded, such as with -hot, which keeps the panel as it was left.
+  const param = sourceParam();
+  if (param !== null && !isReload()) open = param;
   setOpen(open);
   return true;
+}
+
+// sourceParam reports whether the URL asks for the panel to be open, with
+// ?source=true, or closed, with ?source=false, or returns null if it does
+// not ask.
+function sourceParam(): boolean | null {
+  switch (new URLSearchParams(location.search).get('source')) {
+    case 'true':
+      return true;
+    case 'false':
+      return false;
+  }
+  return null;
+}
+
+// isReload reports whether the page was reloaded, rather than opened.
+function isReload(): boolean {
+  const [nav] = performance.getEntriesByType(
+    'navigation'
+  ) as PerformanceNavigationTiming[];
+  return nav?.type === 'reload';
 }

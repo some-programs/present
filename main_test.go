@@ -17,6 +17,7 @@ func TestRunCommand(t *testing.T) {
 		{[]string{"-notes"}, 2, "", "present serve -notes"},
 		{[]string{"serve", "-h"}, 0, "", "-notes"},
 		{[]string{"serve", "talks"}, 2, "", `unexpected argument "talks"`},
+		{[]string{"export"}, 2, "", "usage: present export"},
 		{[]string{"bogus"}, 2, "", `unknown command "bogus"`},
 	} {
 		var stdout, stderr bytes.Buffer

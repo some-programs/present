@@ -1,8 +1,9 @@
+"use strict";
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 // SocketTransport runs programs on the present server over a WebSocket.
-export class SocketTransport {
+class SocketTransport {
     nextID = 0;
     outputs = new Map();
     started = new Set();
@@ -46,7 +47,7 @@ export class SocketTransport {
     }
 }
 // playgroundOutput returns an OutputFunc that appends program output to el.
-export function playgroundOutput(el) {
+function playgroundOutput(el) {
     return (write) => {
         if (write.Kind === 'start') {
             el.textContent = '';

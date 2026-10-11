@@ -2,21 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This module adds Run, Kill and Close buttons to every div.playground on
-// the page and runs the code through the present server.
+// This script adds Run, Kill and Close buttons to every div.playground on
+// the page and runs the code through the present server. It uses notes.js
+// and playground.js, which the templates load before it.
 
-import {
-  playgroundHandlers,
-  updatePlayStorage,
-  type PlayHandler,
-} from './notes.js';
-import {
-  playgroundOutput,
-  SocketTransport,
-  type OutputFunc,
-  type Running,
-  type Transport,
-} from './playground.js';
 
 // Size limits for the output panel while resizing, in CSS pixels.
 const minWidth = 135;

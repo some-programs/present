@@ -2,17 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This module runs slide presentations: navigation and syncing with the presenter notes window.
+// This script runs slide presentations: navigation and syncing with the presenter notes window.
+// It uses notes.js and source.js, which the templates load before it.
 
-import {
-  destSlideKey,
-  setupNotes,
-  storedSlide,
-  toggleNotesWindow,
-  updateNotes,
-  updatePlay,
-} from './notes.js';
-import { closeSource, setupSource, toggleSource, updateSource } from './source.js';
 
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 
@@ -23,8 +15,10 @@ interface SlideEvent extends Event {
   slideNumber: number;
 }
 
-const notesEnabled = !!window.notesEnabled;
-const preloadEnabled = window.preloadEnabled !== false;
+// The settings that the template defines as the globals notesEnabled and
+// preloadEnabled, which a script cannot declare again.
+const notesOn = !!window.notesEnabled;
+const preloadOn = window.preloadEnabled !== false;
 // sourceEnabled reports whether the page has the source panel of -doc. The
 // presenter notes window does not show it.
 let sourceEnabled = false;
@@ -85,7 +79,7 @@ function updateSlides() {
 }
 
 function storeSlide() {
-  if (notesEnabled) localStorage.setItem(destSlideKey(), String(curSlide));
+  if (notesOn) localStorage.setItem(destSlideKey(), String(curSlide));
 }
 
 function prevSlide() {
@@ -221,7 +215,7 @@ function preloadMediaForSlide(no: number) {
 }
 
 function preloadSlideWindow() {
-  if (!preloadEnabled) return;
+  if (!preloadOn) return;
   // Preload current slide as well as upcoming and previous slides in the window
   for (let offset = -1; offset <= 2; offset++) {
     preloadMediaForSlide(curSlide + offset);
@@ -310,7 +304,7 @@ function handleBodyKeyDown(event: KeyboardEvent) {
     case 'n':
     case 'N':
       // Open the presenter notes window.
-      if (!inCode && notesEnabled) toggleNotesWindow();
+      if (!inCode && notesOn) toggleNotesWindow();
       break;
     case 's':
     case 'S':
@@ -400,7 +394,7 @@ function handleDomLoaded() {
 /* Synchronize windows when notes are enabled */
 
 function setupNotesSync() {
-  if (!notesEnabled) return;
+  if (!notesOn) return;
   setupNotes();
   storeSlide();
   window.addEventListener('storage', updateOtherWindow, false);

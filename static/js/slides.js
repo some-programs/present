@@ -1,13 +1,15 @@
+"use strict";
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// This module runs slide presentations: navigation and syncing with the presenter notes window.
-import { destSlideKey, setupNotes, storedSlide, toggleNotesWindow, updateNotes, updatePlay, } from './notes.js';
-import { closeSource, setupSource, toggleSource, updateSource } from './source.js';
+// This script runs slide presentations: navigation and syncing with the presenter notes window.
+// It uses notes.js and source.js, which the templates load before it.
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 const PM_TOUCH_SENSITIVITY = 15;
-const notesEnabled = !!window.notesEnabled;
-const preloadEnabled = window.preloadEnabled !== false;
+// The settings that the template defines as the globals notesEnabled and
+// preloadEnabled, which a script cannot declare again.
+const notesOn = !!window.notesEnabled;
+const preloadOn = window.preloadEnabled !== false;
 // sourceEnabled reports whether the page has the source panel of -doc. The
 // presenter notes window does not show it.
 let sourceEnabled = false;
@@ -57,7 +59,7 @@ function updateSlides() {
     updateHash();
 }
 function storeSlide() {
-    if (notesEnabled)
+    if (notesOn)
         localStorage.setItem(destSlideKey(), String(curSlide));
 }
 function prevSlide() {
@@ -175,7 +177,7 @@ function preloadMediaForSlide(no) {
     }
 }
 function preloadSlideWindow() {
-    if (!preloadEnabled)
+    if (!preloadOn)
         return;
     // Preload current slide as well as upcoming and previous slides in the window
     for (let offset = -1; offset <= 2; offset++) {
@@ -246,7 +248,7 @@ function handleBodyKeyDown(event) {
         case 'n':
         case 'N':
             // Open the presenter notes window.
-            if (!inCode && notesEnabled)
+            if (!inCode && notesOn)
                 toggleNotesWindow();
             break;
         case 's':
@@ -326,7 +328,7 @@ function handleDomLoaded() {
 }
 /* Synchronize windows when notes are enabled */
 function setupNotesSync() {
-    if (!notesEnabled)
+    if (!notesOn)
         return;
     setupNotes();
     storeSlide();

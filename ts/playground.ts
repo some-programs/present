@@ -7,24 +7,24 @@
 // The first write has Kind 'start' and no body. It is followed by writes of
 // Kind 'stdout' or 'stderr' with a Body, and a final write of Kind 'end'
 // whose optional Body describes a failure, such as "killed".
-export interface Write {
+interface Write {
   Kind: 'start' | 'stdout' | 'stderr' | 'end';
   Body?: string;
 }
 
-export type OutputFunc = (write: Write) => void;
+type OutputFunc = (write: Write) => void;
 
-export interface RunOptions {
+interface RunOptions {
   Race: boolean;
   Ext: string; // extension of the program's file, such as ".py"
 }
 
-export interface Running {
+interface Running {
   Kill(): void;
 }
 
 // Transport compiles and runs programs, reporting their output.
-export interface Transport {
+interface Transport {
   Run(body: string, output: OutputFunc, options: RunOptions): Running;
 }
 
@@ -38,7 +38,7 @@ interface Message {
 }
 
 // SocketTransport runs programs on the present server over a WebSocket.
-export class SocketTransport implements Transport {
+class SocketTransport implements Transport {
   private nextID = 0;
   private readonly outputs = new Map<string, OutputFunc>();
   private readonly started = new Set<string>();
@@ -92,7 +92,7 @@ export class SocketTransport implements Transport {
 }
 
 // playgroundOutput returns an OutputFunc that appends program output to el.
-export function playgroundOutput(el: HTMLElement): OutputFunc {
+function playgroundOutput(el: HTMLElement): OutputFunc {
   return (write: Write) => {
     if (write.Kind === 'start') {
       el.textContent = '';

@@ -62,7 +62,7 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
-With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use. The fonts of the slides are served too, at /download/fonts.tar, for installing them.
+With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use. Adding ?source=true to the URL of a presentation opens it with the source shown, and ?source=false with it hidden. The fonts of the slides are served too, at /download/fonts.tar, for installing them.
 
 Other commands write new files from skeletons with present's defaults, and fail rather than overwrite a file:
 
@@ -73,6 +73,15 @@ Other commands write new files from skeletons with present's defaults, and fail 
 	present new-mmd -type sequence diagrams/seq  # diagrams/seq.mmd, a Mermaid sequence diagram
 
 The diagrams use the fonts of the slides, as described under Diagram Style in the present package: Roboto, or JetBrains Mono with -mono, for a diagram of code. The -type of a Mermaid diagram is flowchart, the default, sequence, class or state. Run "present COMMAND -h" for the usage of a command.
+
+The export command writes slide presentations and articles as static HTML pages, for any web server to serve:
+
+	present export my-talk.slide                 # present.export/my-talk.html
+	present export -o public talks/*.slide       # public/talks/*.html
+
+Each page is written to the -o directory, present.export by default, at the path of its file under the current directory, with the images, videos and iframe pages it shows, and the style sheets, scripts and fonts of the pages in the static directory. Links to other presentations point at their pages. Diagrams are rendered first, and export fails if one cannot be. The pages cannot run code, and have no presenter notes. They work opened from files as well as served by any web server, since the style sheet embeds the fonts, which browsers do not load from files.
+
+With -source, pressing S on an exported slide shows its source, notes included, as with -doc, and the files that its commands use are written too.
 
 The convert-legacy command converts presentations in the legacy present markup, which golang.org/x/tools/present also reads, to Markdown. It prints the result, or with -w, converts each file in place:
 

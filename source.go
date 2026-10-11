@@ -25,7 +25,8 @@ func sourceFileName(urlPath string) string {
 }
 
 // A slideSource is the source of one slide of a presentation, which the
-// slides show beside it with -doc when S is pressed.
+// slides show beside it with -doc, or exported with -source, when S is
+// pressed.
 type slideSource struct {
 	Number int          // the number of the slide, from 1
 	Text   string       // the lines of the slide in the presentation file
