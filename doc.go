@@ -49,6 +49,13 @@ the present package: Roboto, or JetBrains Mono with -mono, for a diagram of
 code. The -type of a Mermaid diagram is flowchart, the default, sequence,
 class or state. Run "present COMMAND -h" for the usage of a command.
 
+The convert-legacy command converts presentations in the legacy present
+markup, which golang.org/x/tools/present also reads, to Markdown. It prints
+the result, or with -w, converts each file in place:
+
+	present convert-legacy my-talk.slide         # print my-talk.slide in Markdown
+	present convert-legacy -w *.slide *.article  # convert them all in place
+
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:
 

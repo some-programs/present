@@ -63,6 +63,7 @@ func init() {
 	for _, c := range newCommands {
 		commands = append(commands, command{c.name, c.help, c.run})
 	}
+	commands = append(commands, command{"convert-legacy", "convert presentations from the legacy markup to Markdown", convertLegacy})
 }
 
 //go:embed static templates
@@ -102,7 +103,7 @@ func runCommand(name string, args []string, stdout, stderr io.Writer) int {
 func printUsage(w io.Writer) {
 	fmt.Fprintf(w, "usage: present COMMAND [args]\n\nCommands:\n")
 	for _, c := range commands {
-		fmt.Fprintf(w, "  %-12s %s\n", c.name, c.help)
+		fmt.Fprintf(w, "  %-15s %s\n", c.name, c.help)
 	}
 	fmt.Fprintf(w, "\nRun present COMMAND -h for the usage of a command, such as the flags of serve.\n")
 }

@@ -69,7 +69,7 @@ Title
 
 * Slide
 `
-	const want = `test.slide:2: title must begin with "# " (legacy present markup is not supported)`
+	const want = `test.slide:2: title must begin with "# " (legacy present markup is not supported; convert it with present convert-legacy)`
 	_, err := Parse(strings.NewReader(input), "test.slide", TitlesOnly)
 	if err == nil {
 		t.Fatalf("Parse did not return an error")

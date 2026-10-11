@@ -23,7 +23,8 @@ and other metadata, which looks like:
 
 The title line must begin with "# ". The body of the file uses
 Markdown for text markup. Files in the legacy present markup, whose title
-line has no "# " prefix, are not supported.
+line has no "# " prefix, are not supported, but the convert-legacy command
+of present converts them to Markdown.
 
 The date line may be written without a time:
 

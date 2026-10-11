@@ -329,7 +329,7 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 			continue
 		}
 		if !strings.HasPrefix(line, "# ") {
-			return nil, fmt.Errorf("%s:%d: title must begin with \"# \" (legacy present markup is not supported)", name, i+1)
+			return nil, fmt.Errorf("%s:%d: title must begin with \"# \" (legacy present markup is not supported; convert it with present convert-legacy)", name, i+1)
 		}
 		break
 	}

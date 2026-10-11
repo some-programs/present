@@ -28,7 +28,8 @@ It started as a verbatim copy of it at commit
 
 Most markdown based slides made for the x/tools present should work but the old
 non markdown syntax support has been removed, the fonts have changed and the
-padding outside of the slide body is slightly reduced.
+padding outside of the slide body is slightly reduced. Presentations in the old
+syntax can be converted to Markdown with `present convert-legacy`.
 
 ## Start demo
 

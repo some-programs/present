@@ -30,7 +30,8 @@ It started as a verbatim copy of it at commit
 
 Most markdown based slides made for the x/tools present should work but the old
 non markdown syntax support has been removed, the fonts have changed and the
-padding outside of the slide body is slightly reduced.
+padding outside of the slide body is slightly reduced. Presentations in the old
+syntax can be converted to Markdown with `present convert-legacy`.
 
 ## Start demo
 
@@ -73,6 +74,13 @@ Other commands write new files from skeletons with present's defaults, and fail 
 
 The diagrams use the fonts of the slides, as described under Diagram Style in the present package: Roboto, or JetBrains Mono with -mono, for a diagram of code. The -type of a Mermaid diagram is flowchart, the default, sequence, class or state. Run "present COMMAND -h" for the usage of a command.
 
+The convert-legacy command converts presentations in the legacy present markup, which golang.org/x/tools/present also reads, to Markdown. It prints the result, or with -w, converts each file in place:
+
+	present convert-legacy my-talk.slide         # print my-talk.slide in Markdown
+	present convert-legacy -w *.slide *.article  # convert them all in place
+
+The conversion keeps how the presentation looks. Each line of a paragraph in a slide presentation, which the legacy markup shows on a line of its own, ends in a backslash, Markdown's line break, but for the last; in an article, the lines of a paragraph are filled, as before.
+
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
 	.slide        // HTML5 slide presentation
@@ -94,7 +102,7 @@ Present files begin with a header giving the title of the document and other met
 	Tags: foo, bar, baz
 	Summary: This is a great document you want to read.
 
-The title line must begin with "# ". The body of the file uses Markdown for text markup. Files in the legacy present markup, whose title line has no "# " prefix, are not supported.
+The title line must begin with "# ". The body of the file uses Markdown for text markup. Files in the legacy present markup, whose title line has no "# " prefix, are not supported, but the convert-legacy command of present converts them to Markdown.
 
 The date line may be written without a time:
 
