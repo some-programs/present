@@ -30,6 +30,16 @@ _italic_, **bold**, `code` and [links](https://go.dev/).
 // A line starting with // is a comment and is not shown.
 
 : Lines starting with ": " are speaker notes for this slide.
+: Notes are Markdown: **bold**, `code` and [links](https://go.dev/) work.
+
+::: notes
+A block of notes holds longer notes:
+
+- several paragraphs, lists and code
+- lines starting with `#`, `.` or `//` are Markdown here too
+
+It ends at a line with three colons.
+:::
 
 ## Tables
 

@@ -134,21 +134,17 @@ function openNotesWindow() {
     });
     startTimer();
 }
-// notesFor returns the notes of the given slide as HTML. Slide 0 is the
-// title slide.
-function notesFor(slide) {
-    const notes = slide === 0 ? window.titleNotes : window.sections?.[slide - 1]?.Notes;
-    return (notes ?? []).map((n) => '<p>' + n + '</p>').join('');
-}
+// updateNotes shows the notes of the current slide. The server renders the
+// notes of every slide into the notes window, a block for each, and a last
+// one for slides without notes, such as the one -thankyou adds.
 export function updateNotes() {
     // When triggered from the parent window, notesWindow is null.
     // The storage event listener on notesWindow will update the notes.
     if (!notesWindow)
         return;
-    const el = notesWindow.document.getElementById('presenter-notes');
-    if (!el)
-        return;
-    el.innerHTML = notesFor(storedSlide());
+    const blocks = notesWindow.document.querySelectorAll('#presenter-notes > .slide-notes');
+    const i = Math.min(storedSlide(), blocks.length - 1);
+    blocks.forEach((b, j) => (b.hidden = j !== i));
 }
 /* Playground syncing */
 // updatePlay applies a playground change made in the other window.

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -120,5 +121,21 @@ func TestRenderDocSource(t *testing.T) {
 				t.Errorf("page does not contain %q", want)
 			}
 		}
+	}
+}
+
+func TestSourceNotesBlock(t *testing.T) {
+	s := slideSource{Text: "## One\n\n::: notes\n.code in/notes.go\n:::\n.code code/fib/main.go"}
+	var classes []string
+	for _, l := range s.Lines() {
+		classes = append(classes, l.Class)
+	}
+	want := []string{"src-heading", "", "src-note", "src-note", "src-note", "src-command"}
+	if !slices.Equal(classes, want) {
+		t.Errorf("classes: got %q, want %q", classes, want)
+	}
+	files := commandFiles(strings.Split(s.Text, "\n"), "examples/code.slide", "/_examples/code.slide")
+	if len(files) != 1 || files[0].Name != "code/fib/main.go" {
+		t.Errorf("files: got %+v, want only code/fib/main.go", files)
 	}
 }

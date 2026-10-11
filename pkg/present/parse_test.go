@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -221,3 +222,37 @@ var testTmpl = `
 
 {{define "html" -}}{{.HTML}}{{end}}
 `
+
+func TestNotesBlock(t *testing.T) {
+	const input = `# Title
+
+## One
+
+::: notes
+- a
+// kept
+
+## Not a slide
+:::
+
+## Two
+`
+	doc, err := Parse(strings.NewReader(input), "x.slide", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Sections) != 2 {
+		t.Fatalf("got %d sections, want 2", len(doc.Sections))
+	}
+	if got, want := doc.Sections[0].Notes, []string{"- a\n// kept\n\n## Not a slide"}; !slices.Equal(got, want) {
+		t.Errorf("notes: got %q, want %q", got, want)
+	}
+	if got := doc.Sections[1].Line; got != 12 {
+		t.Errorf("second section on line %d, want 12", got)
+	}
+
+	_, err = Parse(strings.NewReader("# Title\n\n## One\n\n::: notes\nnever closed\n"), "x.slide", 0)
+	if err == nil || !strings.Contains(err.Error(), "x.slide:5: notes block is not closed") {
+		t.Errorf("unclosed block: got error %v", err)
+	}
+}

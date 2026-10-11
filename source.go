@@ -41,9 +41,13 @@ type sourceLine struct {
 // Lines returns the lines of s.Text.
 func (s slideSource) Lines() []sourceLine {
 	var lines []sourceLine
+	inNotes := false
 	for line := range strings.SplitSeq(s.Text, "\n") {
 		var class string
 		switch {
+		case inNotes || present.IsNotesBlockStart(line):
+			class = "src-note"
+			inNotes = !(inNotes && present.IsNotesBlockEnd(line))
 		case strings.HasPrefix(line, "#"):
 			class = "src-heading"
 		case strings.HasPrefix(line, "."):
@@ -107,7 +111,13 @@ func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slid
 // contents of programs, included HTML and diagram sources are included.
 func commandFiles(lines []string, docFile, urlPath string) []sourceFile {
 	var files []sourceFile
+	inNotes := false
 	for _, line := range lines {
+		// Lines in a block of notes are Markdown, not commands.
+		if inNotes || present.IsNotesBlockStart(line) {
+			inNotes = !(inNotes && present.IsNotesBlockEnd(line))
+			continue
+		}
 		if !strings.HasPrefix(line, ".") {
 			continue
 		}

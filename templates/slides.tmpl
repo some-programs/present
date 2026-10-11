@@ -22,13 +22,6 @@
     {{end}}
     <link rel='modulepreload' href='{{static "/static/js/notes.js"}}'>
     <script type='module' src='{{static "/static/js/slides.js"}}'></script>
-
-    {{if .NotesEnabled}}
-    <script>
-      var sections = {{.Sections}};
-      var titleNotes = {{.TitleNotes}}
-    </script>
-    {{end}}
   </head>
 
   <body>
@@ -129,7 +122,16 @@
 
   <body>
     <iframe id='presenter-slides'></iframe>
-    <div id='presenter-notes'></div>
+    <div id='presenter-notes'>
+      {{/* The notes of each slide, of which notes.js shows the current
+           slide's. The last is for slides that present adds, such as with
+           -thankyou. */}}
+      <div class='slide-notes' hidden>{{range .TitleNotes}}{{markdownBlock .}}{{end}}</div>
+      {{range .Sections}}
+      <div class='slide-notes' hidden>{{range sectionNotes .}}{{markdownBlock .}}{{end}}</div>
+      {{end}}
+      <div class='slide-notes' hidden></div>
+    </div>
     <div id='timer'></div>
   </body>
 </html>

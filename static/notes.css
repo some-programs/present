@@ -41,3 +41,19 @@ p {
   font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Markdown in notes. */
+#presenter-notes :is(h1, h2, h3, h4, h5, h6, ul, ol, pre, blockquote, table) {
+  margin: 10px;
+}
+#presenter-notes :is(ul, ol) {
+  padding-left: 30px;
+}
+#presenter-notes :is(pre, code) {
+  font-family: 'JetBrains Mono', monospace;
+}
+#presenter-notes pre {
+  padding: 8px 10px;
+  background: rgb(240, 240, 240);
+  border-radius: 4px;
+}

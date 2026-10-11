@@ -14,7 +14,7 @@ and open Examples in the Documentation section of the index. There, press
 S on a slide to see its source beside it.
 
 - [intro.slide](intro.slide): the header, authors, Markdown text, tables, `.fontsize`,
-  subsections, speaker notes, comments, `.link`, `.html` and `.iframe`.
+  subsections, speaker notes and a block of them, comments, `.link`, `.html` and `.iframe`.
 - [code.slide](code.slide): `.code` with addresses, `OMIT`, highlighting,
   `-numbers` and `-edit`, `.fontsize`, and `.play` with a Go program, a
   multi-file program in a txtar archive, a program that does not compile,

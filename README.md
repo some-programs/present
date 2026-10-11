@@ -112,7 +112,7 @@ Section headings can end in {#name} to set the HTML anchor ID for the heading to
 
 Lines beginning with "//" (outside of code blocks, of course) are treated as present comments and have no effect.
 
-Lines beginning with ": " are treated as speaker notes, described below.
+Lines beginning with ": ", and blocks from a "::: notes" line to a ":::" line, are treated as speaker notes, described below.
 
 Example:
 
@@ -323,7 +323,9 @@ Lines that begin with ": " are treated as presenter notes. By default, presenter
 
 When running the present command with -notes, typing 'N' in your browser displaying your slides will create a second window displaying the notes. The second window is completely synced with the main window, except that presenter notes are only visible in the second window.
 
-Notes may appear anywhere within the slide text. For example:
+Notes are Markdown, so they can have \*\*bold\*\* text, \`code\` and links. Each line of notes is a paragraph of its own. Longer notes, with several paragraphs, lists or code, go in a block that starts with a "::: notes" line and ends with a ":::" line, as in Pandoc and reveal.js. Everything in between is Markdown, also lines that would otherwise be headings, commands or comments.
+
+Notes may appear anywhere within the slide text, also in its subsections and before the first slide, where they belong to the title slide. For example:
 
 	## Title of slide
 
@@ -334,3 +336,12 @@ Notes may appear anywhere within the slide text. For example:
 	Some more text.
 
 	: Presenter notes (subsequent paragraph(s))
+
+	::: notes
+	A block of notes:
+
+	- with a list
+	- and more
+
+	    go test ./...
+	:::

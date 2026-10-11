@@ -17,6 +17,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/some-programs/present/pkg/present"
@@ -111,10 +112,11 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 		// Read and parse the input.
 		tmpl := present.Template()
 		tmpl = tmpl.Funcs(template.FuncMap{
-			"playable": playable,
-			"thankYou": func() bool { return *thankYou },
-			"hot":      func() bool { return *hot },
-			"static":   staticURL,
+			"playable":     playable,
+			"sectionNotes": sectionNotes,
+			"thankYou":     func() bool { return *thankYou },
+			"hot":          func() bool { return *hot },
+			"static":       staticURL,
 			"importMap": func(paths ...string) (template.HTML, error) {
 				return importMap(paths, staticURL)
 			},
@@ -187,13 +189,26 @@ func renderDoc(w io.Writer, docFile, urlPath string) error {
 }
 
 // renderNotes renders the presenter notes window of the slide
-// presentation docFile. The presentation's own window fills it in.
+// presentation docFile, with the notes of every slide. The presentation's
+// own window shows itself in it.
 func renderNotes(w io.Writer, docFile string) error {
-	doc, err := parse(docFile, present.TitlesOnly)
+	doc, err := parse(docFile, 0)
 	if err != nil {
 		return err
 	}
 	return contentTemplate[".slide"].ExecuteTemplate(w, "notes", doc)
+}
+
+// sectionNotes returns the notes of the slide s, including those of its
+// subsections.
+func sectionNotes(s present.Section) []string {
+	notes := slices.Clone(s.Notes)
+	for _, e := range s.Elem {
+		if sub, ok := e.(present.Section); ok {
+			notes = append(notes, sectionNotes(sub)...)
+		}
+	}
+	return notes
 }
 
 // importMap returns an import map script element that has browsers load

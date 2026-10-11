@@ -77,7 +77,7 @@ type Doc struct {
 	Summary    string
 	Time       time.Time
 	Authors    []Author
-	TitleNotes []string
+	TitleNotes []string // the notes of the title slide; see Section.Notes
 	Sections   []Section
 	Tags       []string
 	OldURL     []string
@@ -108,7 +108,7 @@ type Section struct {
 	Title   string
 	ID      string // HTML anchor ID
 	Elem    []Elem
-	Notes   []string
+	Notes   []string // Markdown, each a line of notes or a block of them
 	Classes []string
 	Styles  []string
 
@@ -224,6 +224,7 @@ func init() {
 	funcs["elems"] = renderElems
 	funcs["pagenum"] = pageNum
 	funcs["markdown"] = renderInlineMarkdown
+	funcs["markdownBlock"] = func(s string) (template.HTML, error) { return renderMarkdown([]byte(s)) }
 }
 
 // execTemplate is a helper to execute a template and return the output as a
@@ -315,6 +316,9 @@ const (
 func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error) {
 	doc := new(Doc)
 	lines, err := readLines(r)
+	if err == nil {
+		err = foldNotesBlocks(name, lines)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -639,6 +643,46 @@ func parseTime(text string) (t time.Time, ok bool) {
 		return t, true
 	}
 	return time.Time{}, false
+}
+
+// IsNotesBlockStart reports whether line starts a block of notes, which
+// runs up to a line for which IsNotesBlockEnd reports true.
+func IsNotesBlockStart(line string) bool {
+	rest, ok := strings.CutPrefix(strings.TrimSpace(line), ":::")
+	return ok && strings.TrimSpace(rest) == "notes"
+}
+
+// IsNotesBlockEnd reports whether line ends a block of notes.
+func IsNotesBlockEnd(line string) bool {
+	return strings.TrimSpace(line) == ":::"
+}
+
+// foldNotesBlocks turns each block of notes in lines into a single speaker
+// note holding the lines of the block, so that the parser takes it like
+// any other note. The note is on the line that starts the block, and the
+// other lines of the block become comments, so that lines keep their
+// numbers. Comments in the block are kept, since the block is folded
+// before comments are skipped.
+func foldNotesBlocks(name string, lines *Lines) error {
+	text := lines.text
+	for i := 0; i < len(text); i++ {
+		if !IsNotesBlockStart(text[i]) {
+			continue
+		}
+		end := i + 1
+		for end < len(text) && !IsNotesBlockEnd(text[end]) {
+			end++
+		}
+		if end == len(text) {
+			return fmt.Errorf("%s:%d: notes block is not closed by a line with :::", name, i+1)
+		}
+		text[i] = ": " + strings.Join(text[i+1:end], "\n")
+		for j := i + 1; j <= end; j++ {
+			text[j] = lines.comment
+		}
+		i = end
+	}
+	return nil
 }
 
 func isSpeakerNote(s string) bool {
