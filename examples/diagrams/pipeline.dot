@@ -1,7 +1,9 @@
 digraph pipeline {
 	rankdir=LR;
-	node [shape=box, style="rounded,filled", fillcolor="#e0f4fa", fontname="sans-serif"];
-	edge [fontname="sans-serif", fontsize=10];
+	bgcolor=transparent;
+	fontname="Roboto,sans-serif";
+	node [shape=box, style="rounded,filled", fillcolor="#e0f4fa", fontname="Roboto,sans-serif"];
+	edge [fontname="Roboto,sans-serif", fontsize=10];
 
 	main [label="main"];
 	jobs [label="jobs", shape=cds, fillcolor="#fdf3c4"];

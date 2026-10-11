@@ -227,7 +227,7 @@ The first argument is always the file name. On slides, the image is fitted into 
 	.image images/janet.jpg _ 300
 	.image images/janet.jpg 0.4 _
 
-A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window, or at the top of the page with -hot; without an earlier SVG, the error takes the image's place.
+A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window, or at the top of the page with -hot; without an earlier SVG, the error takes the image's place. See Diagram Style for making diagrams match the slides.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd
@@ -274,6 +274,35 @@ html:
 The function html includes the contents of the specified file as unescaped HTML. This is useful for including custom HTML elements that cannot be created using only the slide format. It is your responsibility to make sure the included HTML is valid and safe.
 
 	.html file.html
+
+### Diagram Style
+
+Diagrams look like part of the presentation when they use its fonts: Roboto for text and Roboto Mono for code. A Graphviz file sets them at the top of the graph, for the graph's own label, the nodes and the edges, and for single nodes that show code:
+
+	digraph example {
+		fontname="Roboto,sans-serif"
+		node [fontname="Roboto,sans-serif"]
+		edge [fontname="Roboto,sans-serif"]
+		bgcolor=transparent
+
+		main -> worker
+		worker [fontname="Roboto Mono,monospace", label="go work(jobs)"]
+	}
+
+Graphviz paints a white background; bgcolor=transparent lets a slide's .background show through instead.
+
+A Mermaid file sets its font in a config block at its start. Mermaid uses one font for a whole diagram, so a diagram of code uses "Roboto Mono, monospace" instead.
+
+	---
+	config:
+	  fontFamily: Roboto, sans-serif
+	---
+	sequenceDiagram
+	    Browser->>present: Run
+
+The same block can set "theme: neutral", which draws in grays rather than Mermaid's default purple and yellow.
+
+The SVG is shown as an image, which cannot use the fonts that present serves to the page, so a diagram uses the fonts installed on the computer showing it, falling back to the system's sans-serif or monospace font. Both tools also size labels with the fonts installed where present runs. Install Roboto and Roboto Mono on both for diagrams to match the slides and their labels to fit.
 
 ### Presenter Notes
 
