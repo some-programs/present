@@ -198,6 +198,26 @@ ul.toc-inner a {
   padding-left: 10px !important;
 }
 
+/* The error that hot.js shows, with -hot, when the page no longer
+   renders or a diagram could not be rendered. */
+#hot-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 12px 20px;
+  max-height: 40vh;
+  overflow: auto;
+
+  font: 14px/1.4 'JetBrains Mono', monospace;
+  white-space: pre-wrap;
+
+  color: #fff;
+  background: #b00020;
+}
+
 @media print {
   .no-print,
   .no-print *,

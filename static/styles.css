@@ -348,7 +348,9 @@ pre {
   margin: 0;
   padding: 0;
 
-  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  /* Show code as typed: no ligatures such as != drawn as one sign. */
+  font-variant-ligatures: none;
   font-size: 18px;
   line-height: 24px;
   letter-spacing: -1px;
@@ -379,7 +381,8 @@ pre.numbers span:before {
 
 code {
   font-size: 95%;
-  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-variant-ligatures: none;
 
   color: black;
 }
@@ -459,7 +462,7 @@ article > .fontsize > .video {
   margin-top: 40px;
   padding: 5px 10px;
 
-  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 18px;
   line-height: 24px;
   letter-spacing: 0;
@@ -644,4 +647,24 @@ figcaption {
   -o-border-radius: 10px;
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
+}
+
+/* The error that hot.js shows, with -hot, when the page no longer
+   renders or a diagram could not be rendered. */
+#hot-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 12px 20px;
+  max-height: 40vh;
+  overflow: auto;
+
+  font: 14px/1.4 'JetBrains Mono', monospace;
+  white-space: pre-wrap;
+
+  color: #fff;
+  background: #b00020;
 }

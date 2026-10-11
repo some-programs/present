@@ -328,7 +328,7 @@ It is your responsibility to make sure the included HTML is valid and safe.
 # Diagram Style
 
 Diagrams look like part of the presentation when they use its fonts:
-Roboto for text and Roboto Mono for code. A Graphviz file sets them at the
+Roboto for text and JetBrains Mono for code. A Graphviz file sets them at the
 top of the graph, for the graph's own label, the nodes and the edges, and
 for single nodes that show code:
 
@@ -339,7 +339,7 @@ for single nodes that show code:
 		bgcolor=transparent
 
 		main -> worker
-		worker [fontname="Roboto Mono,monospace", label="go work(jobs)"]
+		worker [fontname="JetBrains Mono,monospace", label="go work(jobs)"]
 	}
 
 Graphviz paints a white background; bgcolor=transparent lets a slide's
@@ -347,7 +347,7 @@ Graphviz paints a white background; bgcolor=transparent lets a slide's
 
 A Mermaid file sets its font in a config block at its start. Mermaid uses
 one font for a whole diagram, so a diagram of code uses
-"Roboto Mono, monospace" instead.
+"JetBrains Mono, monospace" instead.
 
 	---
 	config:
@@ -363,7 +363,7 @@ The SVG is shown as an image, which cannot use the fonts that present
 serves to the page, so a diagram uses the fonts installed on the computer
 showing it, falling back to the system's sans-serif or monospace font.
 Both tools also size labels with the fonts installed where present runs.
-Install Roboto and Roboto Mono on both for diagrams to match the slides
+Install Roboto and JetBrains Mono on both for diagrams to match the slides
 and their labels to fit.
 
 # Presenter Notes

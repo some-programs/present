@@ -1,24 +1,24 @@
 # Fonts
 
-Roboto and Roboto Mono as variable WOFF2 files, mirrored from the Google Fonts
-css2 API (Roboto v51, Roboto Mono v31) on 2026-10-09. Each file holds one
-script subset (latin, latin-ext, cyrillic, greek, vietnamese, ...);
-`../fonts.css` maps them with `unicode-range`, so browsers fetch only the
-subsets a page uses.
+Roboto and JetBrains Mono as variable WOFF2 files, mirrored from the Google
+Fonts css2 API (Roboto v51 on 2026-10-09, JetBrains Mono v24 on 2026-10-11).
+Each file holds one script subset (latin, latin-ext, cyrillic, greek,
+vietnamese, ...); `../fonts.css` maps them with `unicode-range`, so browsers
+fetch only the subsets a page uses.
 
 Files are named `<family>-<style>-<subset>.woff2`.
 
 Both families are licensed under the SIL Open Font License 1.1:
 `OFL-Roboto.txt` (github.com/googlefonts/roboto-classic) and
-`OFL-RobotoMono.txt` (github.com/googlefonts/RobotoMono).
+`OFL-JetBrainsMono.txt` (github.com/JetBrains/JetBrainsMono).
 
 `fonts.css` uses `font-display: block` so slides never flash a fallback
 font, and `templates/slides.tmpl` preloads `roboto-normal-latin.woff2` and
-`robotomono-normal-latin.woff2`.
+`jetbrainsmono-normal-latin.woff2`.
 
 To refresh the files, fetch this URL with a current browser's User-Agent:
 
-    https://fonts.googleapis.com/css2?family=Roboto:ital,wdth,wght@0,75..100,100..900;1,75..100,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap
+    https://fonts.googleapis.com/css2?family=Roboto:ital,wdth,wght@0,75..100,100..900;1,75..100,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap
 
 Download every `src` URL it lists, point `fonts.css` at the local copies and
 change `font-display: swap` to `font-display: block`. Keep the preloaded file

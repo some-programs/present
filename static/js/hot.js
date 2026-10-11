@@ -38,11 +38,6 @@ function showError(text) {
     if (!el) {
         el = document.createElement('pre');
         el.id = 'hot-error';
-        el.style.cssText =
-            'position: fixed; top: 0; left: 0; right: 0; z-index: 1000; margin: 0;' +
-                'padding: 12px 20px; max-height: 40vh; overflow: auto;' +
-                'white-space: pre-wrap; font: 14px/1.4 "Roboto Mono", monospace;' +
-                'color: #fff; background: #b00020;';
         document.body.appendChild(el);
     }
     el.textContent = text;
