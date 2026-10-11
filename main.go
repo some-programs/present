@@ -29,7 +29,6 @@ var serveFlags = flag.NewFlagSet("present serve", flag.ContinueOnError)
 var (
 	httpAddr    = serveFlags.String("http", "127.0.0.1:3999", "HTTP service address (e.g., '127.0.0.1:3999')")
 	originHost  = serveFlags.String("orighost", "", "host component of web origin URL (e.g., 'localhost')")
-	basePath    = serveFlags.String("base", "", "base path for slide template and static resources")
 	contentPath = serveFlags.String("content", ".", "base path for presentation content")
 	thankYou    = serveFlags.Bool("thankyou", false, "end slide presentations with a \"Thank you\" slide listing the authors")
 	noPreload   = serveFlags.Bool("no-preload", false, "disable preloading slide media (images and video)")
@@ -130,19 +129,12 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	}
 
 	var fsys fs.FS = embedFS
-	if *basePath != "" {
-		fsys = os.DirFS(*basePath)
-	}
 	staticFS := hashfs.NewFS(fsys)
-	staticURL := func(path string) string { return path }
-	if *basePath == "" {
-		// The embedded files cannot change while the server runs, so the
-		// templates can link to content-hashed names that browsers cache
-		// for good. Files under -base may be edited, and hashfs never
-		// rehashes a file, so those are linked to by their plain names.
-		staticURL = func(path string) string {
-			return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
-		}
+	// The embedded files cannot change while the server runs, so the
+	// templates can link to content-hashed names that browsers cache for
+	// good.
+	staticURL := func(path string) string {
+		return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
 	}
 	err := initTemplates(fsys, staticURL)
 	if err != nil {
