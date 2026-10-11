@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -65,35 +67,62 @@ var diagramMu sync.Mutex
 // SVG files next to their sources. It records any failure in the image, to
 // be shown with the slide.
 func renderDiagrams(doc *present.Doc, docFile string) {
+	dir := filepath.Dir(docFile)
+	paths := func(img *present.Image) (src, out string) {
+		return filepath.Join(dir, filepath.FromSlash(img.Source)), filepath.Join(dir, filepath.FromSlash(img.URL))
+	}
+
+	// Diagram files with the same SVG file, such as g.dot and g.mmd, would
+	// overwrite each other's renderings, so none of them is rendered.
+	sources := make(map[string][]string)
+	eachDiagram(doc, func(img *present.Image) {
+		src, out := paths(img)
+		if !slices.Contains(sources[out], src) {
+			sources[out] = append(sources[out], src)
+		}
+	})
+
+	eachDiagram(doc, func(img *present.Image) {
+		src, out := paths(img)
+		if srcs := sources[out]; len(srcs) > 1 {
+			err := fmt.Errorf("%s: all render to %s", strings.Join(srcs, ", "), out)
+			log.Print(err)
+			img.Error = trimContentDirs(err.Error())
+			img.Missing = true
+			return
+		}
+		svg, err := renderDiagram(src, out)
+		if err != nil {
+			log.Print(err)
+			img.Error = trimContentDirs(err.Error())
+		}
+		img.Missing = svg == nil
+		if svg != nil {
+			// A new URL for each rendering, so that browsers do not
+			// show an earlier one from their cache.
+			img.URL += fmt.Sprintf("?v=%.12x", sha256.Sum256(svg))
+		}
+	})
+}
+
+// eachDiagram calls f for each image of doc that is made from a diagram
+// file, in order, keeping any changes f makes to it.
+func eachDiagram(doc *present.Doc, f func(*present.Image)) {
 	for i := range doc.Sections {
-		renderSectionDiagrams(doc.Sections[i].Elem, docFile)
+		eachSectionDiagram(doc.Sections[i].Elem, f)
 	}
 }
 
-func renderSectionDiagrams(elems []present.Elem, docFile string) {
+func eachSectionDiagram(elems []present.Elem, f func(*present.Image)) {
 	for i, e := range elems {
 		switch e := e.(type) {
 		case present.Section:
-			renderSectionDiagrams(e.Elem, docFile)
+			eachSectionDiagram(e.Elem, f)
 		case present.Image:
-			if e.Source == "" {
-				continue
+			if e.Source != "" {
+				f(&e)
+				elems[i] = e
 			}
-			dir := filepath.Dir(docFile)
-			src := filepath.Join(dir, filepath.FromSlash(e.Source))
-			out := filepath.Join(dir, filepath.FromSlash(e.URL))
-			svg, err := renderDiagram(src, out)
-			if err != nil {
-				log.Print(err)
-				e.Error = trimContentDirs(err.Error())
-			}
-			e.Missing = svg == nil
-			if svg != nil {
-				// A new URL for each rendering, so that browsers do not
-				// show an earlier one from their cache.
-				e.URL += fmt.Sprintf("?v=%.12x", sha256.Sum256(svg))
-			}
-			elems[i] = e
 		}
 	}
 }

@@ -261,8 +261,9 @@ renders it whenever the diagram file has changed, and marks the SVG with a
 hash of the diagram file to tell. If the tool is missing or fails, an
 earlier SVG is shown, and the error appears in the presenter notes window,
 or at the top of the page with -hot; without an earlier SVG, the error
-takes the image's place. See Diagram Style for making diagrams match the
-slides.
+takes the image's place. Diagram files that share an SVG file, such as
+flow.dot and flow.mmd, are not rendered, and are an error of that kind.
+See Diagram Style for making diagrams match the slides.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd

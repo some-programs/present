@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/some-programs/present/pkg/present"
 )
 
 func TestRenderDiagram(t *testing.T) {
@@ -129,5 +131,53 @@ printf '<svg>%s</svg>\n' "$(cat g.mmd)"
 	want := src + ": Error: Parse error on line 1:\nbad\n---^"
 	if err == nil || err.Error() != want {
 		t.Errorf("renderDiagram error = %v, want %q", err, want)
+	}
+}
+
+func TestRenderDiagramsSameSVG(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, s string, perm os.FileMode) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(s), perm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A stand-in for dot and mmdc that wraps its input in an svg element.
+	write("fake", "#!/bin/sh\nprintf '<svg>%s</svg>\\n' \"$(cat \"$2\")\"\n", 0o755)
+	oldDot, oldMmdc := *dotCmd, *mmdcCmd
+	*dotCmd, *mmdcCmd = filepath.Join(dir, "fake"), filepath.Join(dir, "fake")
+	t.Cleanup(func() { *dotCmd, *mmdcCmd = oldDot, oldMmdc })
+
+	write("g.dot", "digraph { a }", 0o644)
+	write("g.mmd", "graph TD", 0o644)
+	write("h.dot", "digraph { h }", 0o644)
+	docFile := filepath.Join(dir, "index.slide")
+	slides := "# Title\n\n## One\n.image g.dot\n.image h.dot\n\n## Two\n.image ./g.mmd\n.image h.dot\n"
+	doc, err := present.Parse(strings.NewReader(slides), docFile, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	renderDiagrams(doc, docFile)
+
+	var imgs []present.Image
+	eachDiagram(doc, func(img *present.Image) { imgs = append(imgs, *img) })
+	if len(imgs) != 4 {
+		t.Fatalf("got %d diagram images, want 4", len(imgs))
+	}
+	for _, i := range []int{0, 2} {
+		img := imgs[i]
+		if !img.Missing || !strings.Contains(img.Error, "g.dot") || !strings.Contains(img.Error, "g.mmd") || !strings.Contains(img.Error, "g.svg") {
+			t.Errorf("image %s: Missing = %v, Error = %q, want an error naming g.dot, g.mmd and g.svg", img.Source, img.Missing, img.Error)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "g.svg")); err == nil {
+		t.Errorf("g.svg was rendered")
+	}
+	// The same diagram on two slides is fine.
+	for _, i := range []int{1, 3} {
+		img := imgs[i]
+		if img.Missing || img.Error != "" || !strings.HasPrefix(img.URL, "h.svg?v=") {
+			t.Errorf("image %s: URL = %q, Missing = %v, Error = %q, want it rendered", img.Source, img.URL, img.Missing, img.Error)
+		}
 	}
 }
