@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"io"
 	"maps"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 	"github.com/some-programs/present/pkg/present"
 )
 
-var hot = flag.Bool("hot", false, "reload presentations in the browser when they or the files they use change (not allowed with -notes)")
+var hot = serveFlags.Bool("hot", false, "reload presentations in the browser when they or the files they use change (not allowed with -notes)")
 
 // hotInterval is how often the files of a presentation open in a browser
 // are checked for changes.

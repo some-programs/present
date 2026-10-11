@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	_ "embed"
-	"flag"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -17,7 +16,7 @@ import (
 	"github.com/yuin/goldmark/v2/text"
 )
 
-var showDoc = flag.Bool("doc", false, "serve the present documentation (README.md) at /_doc and the example presentations at /_examples, and list them on the Talks page")
+var showDoc = serveFlags.Bool("doc", false, "serve the present documentation (README.md) at /_doc and the example presentations at /_examples, and list them on the Talks page")
 
 //go:embed README.md
 var readme []byte

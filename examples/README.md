@@ -3,12 +3,12 @@
 Example presentations that together use every feature of present.
 To look at them, run present from the root of this repository:
 
-    go run . -content examples -notes
+    go run . serve -content examples -notes
 
 and open http://127.0.0.1:3999. Press N on a slide to open the speaker
 notes. Without a checkout, run
 
-    go run github.com/some-programs/present@latest -doc -notes
+    go run github.com/some-programs/present@latest serve -doc -notes
 
 and open Examples in the Documentation section of the index. There, press
 S on a slide to see its source beside it.

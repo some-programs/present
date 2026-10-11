@@ -4,7 +4,7 @@ Slides, articles and everything in between
 Tags: present, example
 Summary: The basics of the present file format: header, authors, text and simple commands.
 : Notes before the first slide belong to the title slide.
-: Run present with -notes and press N to see them.
+: Run present serve -notes and press N to see them.
 
 Ada Example
 Gopher Wrangler, Example Corp

@@ -45,7 +45,7 @@ Each word marks its own group of lines. This file also has `// HLmain`:
 
 .play code/hello/main.go
 
-: Run present with -play=false to turn off running programs.
+: Run present serve -play=false to turn off running programs.
 
 ## Running only part of the source
 

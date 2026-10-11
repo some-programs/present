@@ -18,14 +18,18 @@ to runnable code, diagrams and video. They are built into present, so one
 line downloads and runs the latest version and shows them along with this
 documentation:
 
-    go run github.com/some-programs/present@latest -doc -notes
+    go run github.com/some-programs/present@latest serve -doc -notes
 
 Then open http://127.0.0.1:3999. The index lists the presentations in the
 current directory, below links to the documentation and the examples. On a
 slide, press S to see its source beside it.
 ## Command
 
-Present displays slide presentations and articles. It runs a web server that presents slide and article files from the current directory.
+Present displays slide presentations and articles. Its serve command runs a web server that presents slide and article files from the current directory:
+
+	present serve [flags]
+
+Present without a command lists the commands. The flags described below are flags of serve, as in "present serve -notes"; "present serve -h" lists them all.
 
 Present assumes presentation authors are trusted, and should not be used with untrusted inputs.
 
@@ -36,6 +40,15 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
 With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use.
+
+Other commands write new files from skeletons with present's defaults, and fail rather than overwrite a file:
+
+	present new-slide my-talk        # my-talk.slide, a slide presentation
+	present new-article notes        # notes.article, an article
+	present new-dot diagrams/flow    # diagrams/flow.dot, a Graphviz diagram
+	present new-mmd diagrams/seq     # diagrams/seq.mmd, a Mermaid diagram
+
+The diagrams use the fonts of the slides, as described under Diagram Style in the present package. Run "present COMMAND -h" for the usage of a command.
 
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
@@ -321,7 +334,7 @@ The SVG is shown as an image, which cannot use the fonts that present serves to 
 
 Lines that begin with ": " are treated as presenter notes. By default, presenter notes are collected but ignored.
 
-When running the present command with -notes, typing 'N' in your browser displaying your slides will create a second window displaying the notes. The second window is completely synced with the main window, except that presenter notes are only visible in the second window.
+When running present serve with -notes, typing 'N' in your browser displaying your slides will create a second window displaying the notes. The second window is completely synced with the main window, except that presenter notes are only visible in the second window.
 
 Notes are Markdown, so they can have \*\*bold\*\* text, \`code\` and links. Each line of notes is a paragraph of its own. Longer notes, with several paragraphs, lists or code, go in a block that starts with a "::: notes" line and ends with a ":::" line, as in Pandoc and reveal.js. Everything in between is Markdown, also lines that would otherwise be headings, commands or comments.
 

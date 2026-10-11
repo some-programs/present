@@ -373,7 +373,7 @@ with their licenses, at /download/fonts.tar.
 Lines that begin with ": " are treated as presenter notes.
 By default, presenter notes are collected but ignored.
 
-When running the present command with -notes,
+When running present serve with -notes,
 typing 'N' in your browser displaying your slides
 will create a second window displaying the notes.
 The second window is completely synced with the main

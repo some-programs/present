@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -18,10 +17,10 @@ import (
 )
 
 var (
-	noRender = flag.Bool("norender", false, "do not render the diagram files (.dot, .mmd, .mermaid) of .image commands; show their existing .svg files as they are")
+	noRender = serveFlags.Bool("norender", false, "do not render the diagram files (.dot, .mmd, .mermaid) of .image commands; show their existing .svg files as they are")
 
-	dotCmd  = flag.String("dot", "dot", "Graphviz command that renders the .dot files of .image commands to SVG; empty shows their existing .svg files as they are")
-	mmdcCmd = flag.String("mmdc", "mmdc", "Mermaid CLI command that renders the .mmd and .mermaid files of .image commands to SVG; empty shows their existing .svg files as they are")
+	dotCmd  = serveFlags.String("dot", "dot", "Graphviz command that renders the .dot files of .image commands to SVG; empty shows their existing .svg files as they are")
+	mmdcCmd = serveFlags.String("mmdc", "mmdc", "Mermaid CLI command that renders the .mmd and .mermaid files of .image commands to SVG; empty shows their existing .svg files as they are")
 )
 
 // A diagramTool renders diagram files of one kind to SVG.

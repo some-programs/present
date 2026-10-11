@@ -3,8 +3,14 @@
 // license that can be found in the LICENSE file.
 
 /*
-Present displays slide presentations and articles. It runs a web server that
-presents slide and article files from the current directory.
+Present displays slide presentations and articles. Its serve command runs a
+web server that presents slide and article files from the current directory:
+
+	present serve [flags]
+
+Present without a command lists the commands. The flags described below
+are flags of serve, as in "present serve -notes"; "present serve -h" lists
+them all.
 
 Present assumes presentation authors are trusted, and should not be used with untrusted inputs.
 
@@ -28,6 +34,17 @@ the example presentations, which are built into present and served at
 /_examples, for reading them next to the presentations being written.
 Pressing S on a slide then shows its source beside it: the lines of the
 presentation file that make it, and the files that its commands use.
+
+Other commands write new files from skeletons with present's defaults, and
+fail rather than overwrite a file:
+
+	present new-slide my-talk        # my-talk.slide, a slide presentation
+	present new-article notes        # notes.article, an article
+	present new-dot diagrams/flow    # diagrams/flow.dot, a Graphviz diagram
+	present new-mmd diagrams/seq     # diagrams/seq.mmd, a Mermaid diagram
+
+The diagrams use the fonts of the slides, as described under Diagram Style in
+the present package. Run "present COMMAND -h" for the usage of a command.
 
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:

@@ -28,7 +28,7 @@ A `.dot` file is rendered to the SVG file next to it with `dot`:
 .caption The worker pool from code.slide.
 
 : present renders diagrams again whenever their source changes.
-: Run present with -norender to show the existing SVG files instead.
+: Run present serve -norender to show the existing SVG files instead.
 
 ## Mermaid
 

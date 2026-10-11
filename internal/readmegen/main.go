@@ -37,7 +37,7 @@ to runnable code, diagrams and video. They are built into present, so one
 line downloads and runs the latest version and shows them along with this
 documentation:
 
-    go run github.com/some-programs/present@latest -doc -notes
+    go run github.com/some-programs/present@latest serve -doc -notes
 
 Then open http://127.0.0.1:3999. The index lists the presentations in the
 current directory, below links to the documentation and the examples. On a
