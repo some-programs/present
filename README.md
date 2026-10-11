@@ -4,6 +4,14 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/some-programs/present.svg)](https://pkg.go.dev/github.com/some-programs/present)
 
+Present is a simple presentation tool: slides and articles are written as
+plain text files with Markdown, and shown in the browser.
+
+It is based on [golang.org/x/tools/cmd/present](https://pkg.go.dev/golang.org/x/tools/cmd/present).
+It started as a verbatim copy of it at commit
+[a3af45f248c005a2f2485ca99ad978547753a17c](https://go.googlesource.com/tools/+/a3af45f248c005a2f2485ca99ad978547753a17c)
+("internal/refactor/inline: reduce void calls in tail position").
+
 The quickest way to learn present is to look at the [examples](examples):
 presentations that show every feature, from Markdown text and speaker notes
 to runnable code, diagrams and video. From a checkout of this repository, run
