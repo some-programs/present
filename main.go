@@ -148,6 +148,10 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %v", err)
 	}
+	svgFontFaces, err = loadFontFaces(fsys)
+	if err != nil {
+		log.Fatalf("Failed to load fonts: %v", err)
+	}
 
 	ln, err := net.Listen("tcp", *httpAddr)
 	if err != nil {

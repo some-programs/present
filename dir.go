@@ -57,6 +57,9 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	// Have browsers check for a newer file on every load, such as an
 	// image that has been replaced while the slides are open.
 	w.Header().Set("Cache-Control", "no-cache")
+	if filepath.Ext(name) == ".svg" && serveSVG(w, r, name) {
+		return
+	}
 	prefix, dir := contentRoot(r.URL.Path)
 	http.StripPrefix(prefix, http.FileServer(http.Dir(dir))).ServeHTTP(w, r)
 }

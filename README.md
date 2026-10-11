@@ -79,8 +79,6 @@ The convert-legacy command converts presentations in the legacy present markup, 
 	present convert-legacy my-talk.slide         # print my-talk.slide in Markdown
 	present convert-legacy -w *.slide *.article  # convert them all in place
 
-The conversion keeps how the presentation looks. Each line of a paragraph in a slide presentation, which the legacy markup shows on a line of its own, ends in a backslash, Markdown's line break, but for the last; in an article, the lines of a paragraph are filled, as before.
-
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
 	.slide        // HTML5 slide presentation
@@ -403,7 +401,7 @@ A Mermaid flowchart can use both fonts, with a class for each, as the flowcharts
 
 Other types of Mermaid diagrams use one font: a state diagram cannot escape the comma of a class, so a font in it has no fallback, and the classes of a class diagram and the participants of a sequence diagram cannot set one.
 
-The SVG is shown as an image, which cannot use the fonts that present serves to the page, so a diagram uses the fonts installed on the computer showing it, falling back to the system's sans-serif or monospace font. Both tools also size labels with the fonts installed where present runs. Install Roboto and JetBrains Mono on both for diagrams to match the slides and their labels to fit. A running present serves both as TrueType files, with their licenses, at /download/fonts.tar.
+The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. A running present serves both as TrueType files, with their licenses, at /download/fonts.tar.
 
 ### Presenter Notes
 
