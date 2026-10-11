@@ -12,6 +12,7 @@ import {
   updateNotes,
   updatePlay,
 } from './notes.js';
+import { closeSource, setupSource, toggleSource, updateSource } from './source.js';
 
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 
@@ -24,6 +25,9 @@ interface SlideEvent extends Event {
 
 const notesEnabled = !!window.notesEnabled;
 const preloadEnabled = window.preloadEnabled !== false;
+// sourceEnabled reports whether the page has the source panel of -doc. The
+// presenter notes window does not show it.
+let sourceEnabled = false;
 
 let slideEls: NodeListOf<HTMLElement>;
 let curSlide = 0;
@@ -74,6 +78,8 @@ function updateSlides() {
   enableSlideFrames(curSlide + 2);
 
   preloadSlideWindow();
+
+  if (sourceEnabled) updateSource(curSlide);
 
   updateHash();
 }
@@ -306,11 +312,21 @@ function handleBodyKeyDown(event: KeyboardEvent) {
       // Open the presenter notes window.
       if (!inCode && notesEnabled) toggleNotesWindow();
       break;
+    case 's':
+    case 'S':
+      // Show the source of the slide.
+      if (!inCode && sourceEnabled) toggleSource();
+      break;
     case 'h':
     case 'H':
-    case 'Escape':
       // Hide the help text.
       if (!inCode) hideHelpText();
+      break;
+    case 'Escape':
+      // Hide the help text and the source.
+      if (inCode) break;
+      hideHelpText();
+      if (sourceEnabled) closeSource();
       break;
 
     case 'PageDown':
@@ -363,6 +379,9 @@ function handleDomLoaded() {
 
   markPresenterView();
   addEventListeners();
+  sourceEnabled =
+    !document.documentElement.classList.contains('presenter-view') &&
+    setupSource();
 
   updateSlides();
 

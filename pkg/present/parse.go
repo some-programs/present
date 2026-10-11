@@ -114,6 +114,9 @@ type Section struct {
 
 	// Background is the image of a .background command, if any.
 	Background string
+
+	// Line is the line number of the section's heading in the file.
+	Line int
 }
 
 // HTMLAttributes for the section
@@ -406,6 +409,7 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 			Number: append(slices.Clone(number), i),
 			Title:  title,
 			ID:     id,
+			Line:   lines.line,
 		}
 		text, ok = lines.nextNonEmpty()
 		for ok && !lesserHeading(text, prefix) {

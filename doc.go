@@ -26,6 +26,8 @@ the same for one kind of diagram.
 With -doc, the Talks page lists this documentation, served at /_doc, and
 the example presentations, which are built into present and served at
 /_examples, for reading them next to the presentations being written.
+Pressing S on a slide then shows its source beside it: the lines of the
+presentation file that make it, and the files that its commands use.
 
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:

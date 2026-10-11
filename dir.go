@@ -31,16 +31,16 @@ func init() {
 func dirHandler(w http.ResponseWriter, r *http.Request) {
 	name := contentFile(r.URL.Path)
 	if isDoc(name) {
-		render := renderDoc
+		render := func(w io.Writer) error { return renderDoc(w, name, r.URL.Path) }
 		if r.URL.Query().Has("notes") {
 			if !present.NotesEnabled || filepath.Ext(name) != ".slide" {
 				http.NotFound(w, r)
 				return
 			}
-			render = renderNotes
+			render = func(w io.Writer) error { return renderNotes(w, name) }
 		}
 		var buf bytes.Buffer
-		if err := render(&buf, name); err != nil {
+		if err := render(&buf); err != nil {
 			serveError(w, r, name, err)
 			return
 		}
@@ -135,11 +135,30 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 	return err
 }
 
-// renderDoc reads the present file, gets its template representation,
-// and executes the template, sending output to w.
-func renderDoc(w io.Writer, docFile string) error {
+// pageData is what the templates of presentations and articles are
+// executed with: what present.Doc.Render passes them, and with -doc the
+// source of each slide.
+type pageData struct {
+	*present.Doc
+	Template       *template.Template
+	PlayEnabled    bool
+	NotesEnabled   bool
+	PreloadEnabled bool
+
+	SourceFile string        // the presentation file, as sourceFileName names it
+	Sources    []slideSource // the source of each slide, with -doc
+}
+
+// renderDoc reads the present file docFile, served at the URL path
+// urlPath, gets its template representation, and executes the template,
+// sending output to w.
+func renderDoc(w io.Writer, docFile, urlPath string) error {
 	// Read the input and build the doc structure.
-	doc, err := parse(docFile, 0)
+	src, err := os.ReadFile(docFile)
+	if err != nil {
+		return err
+	}
+	doc, err := present.Parse(bytes.NewReader(src), docFile, 0)
 	if err != nil {
 		return err
 	}
@@ -148,8 +167,23 @@ func renderDoc(w io.Writer, docFile string) error {
 	// Find which template should be executed.
 	tmpl := contentTemplate[filepath.Ext(docFile)]
 
+	data := pageData{
+		Doc:            doc,
+		Template:       tmpl,
+		PlayEnabled:    present.PlayEnabled,
+		NotesEnabled:   present.NotesEnabled,
+		PreloadEnabled: present.PreloadEnabled,
+	}
+	if *showDoc && filepath.Ext(docFile) == ".slide" {
+		data.SourceFile = sourceFileName(urlPath)
+		data.Sources, err = slideSources(doc, src, docFile, urlPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Execute the template.
-	return doc.Render(w, tmpl)
+	return tmpl.ExecuteTemplate(w, "root", data)
 }
 
 // renderNotes renders the presenter notes window of the slide

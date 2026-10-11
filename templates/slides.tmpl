@@ -8,7 +8,7 @@
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width,height=device-height,initial-scale=1'>
     <meta name='apple-mobile-web-app-capable' content='yes'>
-    {{importMap "/static/js/notes.js" "/static/js/playground.js"}}
+    {{importMap "/static/js/notes.js" "/static/js/playground.js" "/static/js/source.js"}}
     <link rel='preload' href='/static/fonts/roboto-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
     <link rel='preload' href='/static/fonts/jetbrainsmono-normal-latin.woff2' as='font' type='font/woff2' crossorigin>
     <link rel='stylesheet' href='{{static "/static/fonts.css"}}'>
@@ -72,6 +72,36 @@
   {{end}}
 
     </section>
+
+    {{with .Sources}}
+    <aside id="source" class="no-print">
+      {{range .}}
+      <div class="src-slide" hidden>
+        <div class="src-title">Source of slide {{.Number}}<span>S or Esc closes</span></div>
+        <div class="src-name">{{$.SourceFile}}</div>
+        <pre class="src-markup">{{range .Lines}}<span class="{{.Class}}">{{.Text}}{{"\n"}}</span>{{end}}</pre>
+        {{with .Files}}
+        <h4>{{if eq (len .) 1}}File used{{else}}Files used{{end}}</h4>
+        {{range .}}
+        {{if .Text}}
+        <details class="src-file" open>
+          <summary><a href="{{.URL}}" target="_blank" rel="noopener">{{.Name}}</a></summary>
+          <pre>{{.Text}}</pre>
+        </details>
+        {{else}}
+        <div class="src-file"><a href="{{.URL}}" target="_blank" rel="noopener">{{.Name}}</a></div>
+        {{end}}
+        {{end}}
+        {{end}}
+      </div>
+      {{end}}
+      {{/* Shown for slides that present adds, such as with -thankyou. */}}
+      <div class="src-slide" hidden>
+        <div class="src-title">No source<span>S or Esc closes</span></div>
+        <p>present adds this slide itself; it has no source.</p>
+      </div>
+    </aside>
+    {{end}}
 
     <div id="help">
       Use the left and right arrow keys or click the left and right

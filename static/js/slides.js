@@ -3,10 +3,14 @@
 // license that can be found in the LICENSE file.
 // This module runs slide presentations: navigation and syncing with the presenter notes window.
 import { destSlideKey, setupNotes, storedSlide, toggleNotesWindow, updateNotes, updatePlay, } from './notes.js';
+import { closeSource, setupSource, toggleSource, updateSource } from './source.js';
 const SLIDE_CLASSES = ['far-past', 'past', 'current', 'next', 'far-next'];
 const PM_TOUCH_SENSITIVITY = 15;
 const notesEnabled = !!window.notesEnabled;
 const preloadEnabled = window.preloadEnabled !== false;
+// sourceEnabled reports whether the page has the source panel of -doc. The
+// presenter notes window does not show it.
+let sourceEnabled = false;
 let slideEls;
 let curSlide = 0;
 /* Slide movement */
@@ -48,6 +52,8 @@ function updateSlides() {
     enableSlideFrames(curSlide - 1);
     enableSlideFrames(curSlide + 2);
     preloadSlideWindow();
+    if (sourceEnabled)
+        updateSource(curSlide);
     updateHash();
 }
 function storeSlide() {
@@ -243,12 +249,25 @@ function handleBodyKeyDown(event) {
             if (!inCode && notesEnabled)
                 toggleNotesWindow();
             break;
+        case 's':
+        case 'S':
+            // Show the source of the slide.
+            if (!inCode && sourceEnabled)
+                toggleSource();
+            break;
         case 'h':
         case 'H':
-        case 'Escape':
             // Hide the help text.
             if (!inCode)
                 hideHelpText();
+            break;
+        case 'Escape':
+            // Hide the help text and the source.
+            if (inCode)
+                break;
+            hideHelpText();
+            if (sourceEnabled)
+                closeSource();
             break;
         case 'PageDown':
             nextSlide();
@@ -293,6 +312,9 @@ function handleDomLoaded() {
     setupFrames();
     markPresenterView();
     addEventListeners();
+    sourceEnabled =
+        !document.documentElement.classList.contains('presenter-view') &&
+            setupSource();
     updateSlides();
     setupInteraction();
     const host = window.location.hostname;

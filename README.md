@@ -4,8 +4,8 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/some-programs/present.svg)](https://pkg.go.dev/github.com/some-programs/present)
 
-Present is a simple presentation tool: slides and articles are written as
-plain text files with Markdown, and shown in the browser.
+Present is a simple presentation tool for slides written as plain text files
+with Markdown, and shown in the browser.
 
 It is based on [golang.org/x/tools/cmd/present](https://pkg.go.dev/golang.org/x/tools/cmd/present).
 It started as a verbatim copy of it at commit
@@ -21,13 +21,8 @@ documentation:
     go run github.com/some-programs/present@latest -doc -notes
 
 Then open http://127.0.0.1:3999. The index lists the presentations in the
-current directory, below links to the documentation and the examples. From a
-checkout of this repository, run
-
-    go run . -content examples -notes
-
-to show the examples there instead.
-
+current directory, below links to the documentation and the examples. On a
+slide, press S to see its source beside it.
 ## Command
 
 Present displays slide presentations and articles. It runs a web server that presents slide and article files from the current directory.
@@ -40,7 +35,7 @@ With -hot, an open presentation reloads in the browser whenever its file, or a f
 
 An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
 
-With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written.
+With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use.
 
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 

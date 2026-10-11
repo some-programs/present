@@ -30,13 +30,25 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* The width of the source panel of -doc, which the slides make room
+     for while it is open. */
+  html {
+    --source-width: 0px;
+  }
+  html.source-open {
+    --source-width: min(45vw, 720px);
+  }
+
   .slides {
-    width: 100%;
+    width: calc(100% - var(--source-width));
     height: 100%;
     left: 0;
     top: 0;
 
     position: absolute;
+
+    /* The width of the window that the slides are shown in. */
+    --window-width: calc(100dvw - var(--source-width));
 
     /* The slide size, and the margin around it at the closest window
        edges. */
@@ -46,13 +58,13 @@
 
     /* Scale window */
     --slide-scale: min(
-      tan(atan2(100dvw, var(--slide-width) + 2 * var(--slide-margin))),
+      tan(atan2(var(--window-width), var(--slide-width) + 2 * var(--slide-margin))),
       tan(atan2(100dvh, var(--slide-height) + 2 * var(--slide-margin)))
     );
     transform: scale(var(--slide-scale));
 
     /* Half the window width, in unscaled slide pixels. */
-    --half-window: calc(50dvw / var(--slide-scale));
+    --half-window: calc(var(--window-width) / 2 / var(--slide-scale));
 
     /* The distance between slide centres. It puts the previous and next
        slide just outside the window, so only the background shows beside
@@ -667,4 +679,92 @@ figcaption {
 
   color: #fff;
   background: #b00020;
+}
+
+/* The source panel of -doc, which shows the source of the current slide. */
+
+#source {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  box-sizing: border-box;
+  width: var(--source-width);
+  overflow: auto;
+  padding: 0 20px 20px;
+
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: black;
+  background: white;
+  border-left: 1px solid rgba(0, 0, 0, 0.3);
+}
+.source-open #source {
+  display: block;
+}
+
+#source .src-title {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 10px;
+  font-size: 16px;
+  font-weight: bold;
+  background: white;
+}
+#source .src-title span {
+  font-size: 12px;
+  font-weight: normal;
+  color: rgb(120, 120, 120);
+}
+
+#source .src-name {
+  margin-bottom: 6px;
+}
+
+#source h4 {
+  margin: 20px 0 8px;
+  font-size: 14px;
+}
+
+#source pre {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  background: rgb(240, 240, 240);
+  border-radius: 6px;
+}
+
+/* The parts of present markup. */
+#source .src-heading {
+  font-weight: bold;
+  color: rgb(0, 102, 204);
+}
+#source .src-command {
+  color: rgb(160, 30, 110);
+}
+#source .src-note {
+  color: rgb(20, 120, 50);
+}
+#source .src-comment {
+  color: rgb(120, 120, 120);
+  font-style: italic;
+}
+
+#source .src-file {
+  margin: 0 0 8px;
+}
+#source summary {
+  margin-bottom: 6px;
+  cursor: pointer;
 }
