@@ -38,13 +38,16 @@ presentation file that make it, and the files that its commands use.
 Other commands write new files from skeletons with present's defaults, and
 fail rather than overwrite a file:
 
-	present new-slide my-talk        # my-talk.slide, a slide presentation
-	present new-article notes        # notes.article, an article
-	present new-dot diagrams/flow    # diagrams/flow.dot, a Graphviz diagram
-	present new-mmd diagrams/seq     # diagrams/seq.mmd, a Mermaid diagram
+	present new-slide my-talk                    # my-talk.slide, a slide presentation
+	present new-article notes                    # notes.article, an article
+	present new-dot diagrams/flow                # diagrams/flow.dot, a Graphviz diagram
+	present new-mmd diagrams/flow                # diagrams/flow.mmd, a Mermaid flowchart
+	present new-mmd -type sequence diagrams/seq  # diagrams/seq.mmd, a Mermaid sequence diagram
 
 The diagrams use the fonts of the slides, as described under Diagram Style in
-the present package. Run "present COMMAND -h" for the usage of a command.
+the present package: Roboto, or JetBrains Mono with -mono, for a diagram of
+code. The -type of a Mermaid diagram is flowchart, the default, sequence,
+class or state. Run "present COMMAND -h" for the usage of a command.
 
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:

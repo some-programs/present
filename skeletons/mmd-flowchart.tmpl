@@ -1,0 +1,8 @@
+---
+config:
+  fontFamily: {{.Font}}
+---
+flowchart LR
+    classDef text font-family:{{escapeCommas .TextFont}}
+    classDef code font-family:{{escapeCommas .CodeFont}}
+    a["hello"] --> b["world"]:::code

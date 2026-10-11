@@ -337,7 +337,8 @@ It is your responsibility to make sure the included HTML is valid and safe.
 
 Diagrams look like part of the presentation when they use its fonts:
 Roboto for text and JetBrains Mono for code. The new-dot and new-mmd
-commands of the present program write Graphviz and Mermaid files that do.
+commands of the present program write Graphviz and Mermaid files that do,
+in Roboto, or in JetBrains Mono with -mono.
 
 A Graphviz diagram:
 
@@ -363,6 +364,21 @@ A Graphviz diagram of code:
 		main -> work
 	}
 
+A Graphviz diagram can use both fonts, with fontname on a node or edge,
+or with FONT in an HTML-like label for part of a label:
+
+	digraph mixed {
+		fontname="Roboto,sans-serif"
+		node [fontname="Roboto,sans-serif", style=filled, fillcolor=white]
+		edge [fontname="Roboto,sans-serif"]
+		bgcolor=transparent
+
+		request [label="HTTP request"]
+		handler [label="func handle()", fontname="JetBrains Mono,monospace"]
+		reply [label=<writes <FONT FACE="JetBrains Mono,monospace">w</FONT>>]
+		request -> handler -> reply
+	}
+
 A Mermaid diagram:
 
 	---
@@ -380,6 +396,24 @@ A Mermaid diagram of code:
 	---
 	flowchart LR
 	    main["func main()"] --> work["go work(jobs)"]
+
+A Mermaid flowchart can use both fonts, with a class for each, as the
+flowcharts of new-mmd define: text for Roboto and code for JetBrains Mono,
+whichever font the diagram has. The comma in a font is escaped as \,,
+since a comma separates the styles of a class:
+
+	---
+	config:
+	  fontFamily: Roboto, sans-serif
+	---
+	flowchart LR
+	    classDef text font-family:Roboto\,sans-serif
+	    classDef code font-family:JetBrains Mono\,monospace
+	    request["HTTP request"] --> handler["func handle()"]:::code
+
+Other types of Mermaid diagrams use one font: a state diagram cannot escape
+the comma of a class, so a font in it has no fallback, and the classes of
+a class diagram and the participants of a sequence diagram cannot set one.
 
 The SVG is shown as an image, which cannot use the fonts that present
 serves to the page, so a diagram uses the fonts installed on the computer

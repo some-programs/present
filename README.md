@@ -43,12 +43,13 @@ With -doc, the Talks page lists this documentation, served at /\_doc, and the ex
 
 Other commands write new files from skeletons with present's defaults, and fail rather than overwrite a file:
 
-	present new-slide my-talk        # my-talk.slide, a slide presentation
-	present new-article notes        # notes.article, an article
-	present new-dot diagrams/flow    # diagrams/flow.dot, a Graphviz diagram
-	present new-mmd diagrams/seq     # diagrams/seq.mmd, a Mermaid diagram
+	present new-slide my-talk                    # my-talk.slide, a slide presentation
+	present new-article notes                    # notes.article, an article
+	present new-dot diagrams/flow                # diagrams/flow.dot, a Graphviz diagram
+	present new-mmd diagrams/flow                # diagrams/flow.mmd, a Mermaid flowchart
+	present new-mmd -type sequence diagrams/seq  # diagrams/seq.mmd, a Mermaid sequence diagram
 
-The diagrams use the fonts of the slides, as described under Diagram Style in the present package. Run "present COMMAND -h" for the usage of a command.
+The diagrams use the fonts of the slides, as described under Diagram Style in the present package: Roboto, or JetBrains Mono with -mono, for a diagram of code. The -type of a Mermaid diagram is flowchart, the default, sequence, class or state. Run "present COMMAND -h" for the usage of a command.
 
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
@@ -306,7 +307,7 @@ The function html includes the contents of the specified file as unescaped HTML.
 
 ### Diagram Style
 
-Diagrams look like part of the presentation when they use its fonts: Roboto for text and JetBrains Mono for code. The new-dot and new-mmd commands of the present program write Graphviz and Mermaid files that do.
+Diagrams look like part of the presentation when they use its fonts: Roboto for text and JetBrains Mono for code. The new-dot and new-mmd commands of the present program write Graphviz and Mermaid files that do, in Roboto, or in JetBrains Mono with -mono.
 
 A Graphviz diagram:
 
@@ -332,6 +333,20 @@ A Graphviz diagram of code:
 		main -> work
 	}
 
+A Graphviz diagram can use both fonts, with fontname on a node or edge, or with FONT in an HTML-like label for part of a label:
+
+	digraph mixed {
+		fontname="Roboto,sans-serif"
+		node [fontname="Roboto,sans-serif", style=filled, fillcolor=white]
+		edge [fontname="Roboto,sans-serif"]
+		bgcolor=transparent
+
+		request [label="HTTP request"]
+		handler [label="func handle()", fontname="JetBrains Mono,monospace"]
+		reply [label=<writes <FONT FACE="JetBrains Mono,monospace">w</FONT>>]
+		request -> handler -> reply
+	}
+
 A Mermaid diagram:
 
 	---
@@ -349,6 +364,19 @@ A Mermaid diagram of code:
 	---
 	flowchart LR
 	    main["func main()"] --> work["go work(jobs)"]
+
+A Mermaid flowchart can use both fonts, with a class for each, as the flowcharts of new-mmd define: text for Roboto and code for JetBrains Mono, whichever font the diagram has. The comma in a font is escaped as \\,, since a comma separates the styles of a class:
+
+	---
+	config:
+	  fontFamily: Roboto, sans-serif
+	---
+	flowchart LR
+	    classDef text font-family:Roboto\,sans-serif
+	    classDef code font-family:JetBrains Mono\,monospace
+	    request["HTTP request"] --> handler["func handle()"]:::code
+
+Other types of Mermaid diagrams use one font: a state diagram cannot escape the comma of a class, so a font in it has no fallback, and the classes of a class diagram and the participants of a sequence diagram cannot set one.
 
 The SVG is shown as an image, which cannot use the fonts that present serves to the page, so a diagram uses the fonts installed on the computer showing it, falling back to the system's sans-serif or monospace font. Both tools also size labels with the fonts installed where present runs. Install Roboto and JetBrains Mono on both for diagrams to match the slides and their labels to fit. A running present serves both as TrueType files, with their licenses, at /download/fonts.tar.
 
