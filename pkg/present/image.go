@@ -7,6 +7,7 @@ package present
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ func init() {
 
 // An Image is an image from a .image command:
 //
-//	.image file [size | height width]
+//	.image [-background-color color] file [size | height width]
 //
 // Each size is a number of pixels, a fraction from 0.0 to 1.0 of the
 // slide's content area, or _ for none. A single size is a fraction of both
@@ -27,7 +28,9 @@ func init() {
 //
 // A diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), is shown as
 // the SVG file next to it with the same name, which the program serving the
-// slides keeps up to date.
+// slides keeps up to date. The -background-color flag sets the background
+// of a Mermaid diagram, which is white otherwise; a Graphviz diagram sets
+// its own with the bgcolor attribute.
 type Image struct {
 	Cmd    string // original command from present source
 	URL    string
@@ -39,6 +42,9 @@ type Image struct {
 
 	// Source is the diagram file that URL is made from, if any.
 	Source string
+	// BackgroundColor is the background of the rendering of Source, a
+	// CSS color, if not the default.
+	BackgroundColor string
 
 	// Error says why URL could not be made from Source. Missing reports
 	// that there is no earlier URL to show instead.
@@ -50,17 +56,42 @@ type Image struct {
 // made from.
 var diagramExts = []string{".dot", ".mmd", ".mermaid"}
 
+// mermaidExts are the extensions of the diagram files rendered by Mermaid.
+var mermaidExts = []string{".mmd", ".mermaid"}
+
+// cssColor matches the CSS colors that -background-color accepts, such as
+// transparent, #f8f8f8 and rgb(0,0,0,0.5), written without spaces.
+var cssColor = regexp.MustCompile(`^(#[0-9A-Fa-f]+|[A-Za-z]+(\([0-9.,%]+\))?)$`)
+
 func (i Image) TemplateName() string { return "image" }
 
 func parseImage(_ *Context, fileName string, lineno int, text string) (Elem, error) {
 	args := strings.Fields(text)
+	img := Image{Cmd: text}
+	// Flags come before the file name.
+	for len(args) > 1 && strings.HasPrefix(args[1], "-") {
+		switch args[1] {
+		case "-background-color":
+			if len(args) < 3 || !cssColor.MatchString(args[2]) {
+				return nil, fmt.Errorf("%s:%d: incorrect image invocation: %q: -background-color needs a CSS color, such as transparent", fileName, lineno, text)
+			}
+			img.BackgroundColor = args[2]
+			args = slices.Delete(args, 1, 3)
+		default:
+			return nil, fmt.Errorf("%s:%d: incorrect image invocation: %q: unknown flag %s", fileName, lineno, text, args[1])
+		}
+	}
 	if len(args) < 2 {
 		return nil, fmt.Errorf("incorrect image invocation: %q", text)
 	}
-	img := Image{Cmd: text, URL: args[1]}
-	if ext := path.Ext(img.URL); slices.Contains(diagramExts, ext) && !strings.Contains(img.URL, "://") {
+	img.URL = args[1]
+	ext := path.Ext(img.URL)
+	if slices.Contains(diagramExts, ext) && !strings.Contains(img.URL, "://") {
 		img.Source = img.URL
 		img.URL = strings.TrimSuffix(img.URL, ext) + ".svg"
+	}
+	if img.BackgroundColor != "" && (img.Source == "" || !slices.Contains(mermaidExts, ext)) {
+		return nil, fmt.Errorf("%s:%d: incorrect image invocation: %q: -background-color is only for Mermaid diagrams (.mmd, .mermaid)", fileName, lineno, text)
 	}
 	var err error
 	switch len(args) {

@@ -267,6 +267,12 @@ See Diagram Style for making diagrams match the slides.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd
+	.image -background-color transparent diagrams/sequence.mmd
+
+The -background-color flag, before the file name, sets the background of
+a Mermaid diagram to a CSS color written without spaces, such as
+transparent, #f8f8f8 or rgb(0,0,0,0.1); it is white otherwise. A Graphviz
+file sets its own background with the bgcolor attribute.
 
 video:
 
@@ -330,26 +336,34 @@ It is your responsibility to make sure the included HTML is valid and safe.
 # Diagram Style
 
 Diagrams look like part of the presentation when they use its fonts:
-Roboto for text and JetBrains Mono for code. A Graphviz file sets them at the
-top of the graph, for the graph's own label, the nodes and the edges, and
-for single nodes that show code:
+Roboto for text and JetBrains Mono for code. The new-dot and new-mmd
+commands of the present program write Graphviz and Mermaid files that do.
+
+A Graphviz diagram:
 
 	digraph example {
 		fontname="Roboto,sans-serif"
-		node [fontname="Roboto,sans-serif"]
+		node [fontname="Roboto,sans-serif", style=filled, fillcolor=white]
 		edge [fontname="Roboto,sans-serif"]
 		bgcolor=transparent
 
 		main -> worker
-		worker [fontname="JetBrains Mono,monospace", label="go work(jobs)"]
 	}
 
-Graphviz paints a white background; bgcolor=transparent lets a slide's
-.background show through instead.
+A Graphviz diagram of code:
 
-A Mermaid file sets its font in a config block at its start. Mermaid uses
-one font for a whole diagram, so a diagram of code uses
-"JetBrains Mono, monospace" instead.
+	digraph code {
+		fontname="JetBrains Mono,monospace"
+		node [fontname="JetBrains Mono,monospace", shape=box, style=filled, fillcolor=white]
+		edge [fontname="JetBrains Mono,monospace"]
+		bgcolor=transparent
+
+		main [label="func main()"]
+		work [label="go work(jobs)"]
+		main -> work
+	}
+
+A Mermaid diagram:
 
 	---
 	config:
@@ -358,8 +372,14 @@ one font for a whole diagram, so a diagram of code uses
 	sequenceDiagram
 	    Browser->>present: Run
 
-The same block can set "theme: neutral", which draws in grays rather than
-Mermaid's default purple and yellow.
+A Mermaid diagram of code:
+
+	---
+	config:
+	  fontFamily: JetBrains Mono, monospace
+	---
+	flowchart LR
+	    main["func main()"] --> work["go work(jobs)"]
 
 The SVG is shown as an image, which cannot use the fonts that present
 serves to the page, so a diagram uses the fonts installed on the computer

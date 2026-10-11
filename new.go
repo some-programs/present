@@ -49,7 +49,7 @@ var newCommands = []newCommand{
 		skeleton: func(string) string {
 			return `digraph {
 	fontname="Roboto,sans-serif"
-	node [fontname="Roboto,sans-serif"]
+	node [fontname="Roboto,sans-serif", style=filled, fillcolor=white]
 	edge [fontname="Roboto,sans-serif"]
 	bgcolor=transparent
 

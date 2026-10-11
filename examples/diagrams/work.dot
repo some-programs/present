@@ -1,0 +1,10 @@
+digraph code {
+	fontname="JetBrains Mono,monospace"
+	node [fontname="JetBrains Mono,monospace", shape=box, style=filled, fillcolor=white]
+	edge [fontname="JetBrains Mono,monospace"]
+	bgcolor=transparent
+
+	main [label="func main()"]
+	work [label="go work(jobs)"]
+	main -> work
+}

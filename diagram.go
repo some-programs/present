@@ -33,21 +33,26 @@ type diagramTool struct {
 	// cmd is the command to run; empty turns rendering off.
 	cmd *string
 	// args returns the arguments that make cmd write the file src, in the
-	// current directory, to standard output as SVG.
-	args func(src string) []string
+	// current directory, to standard output as SVG, with the background
+	// color bg, if not empty.
+	args func(src, bg string) []string
 }
 
 var (
 	dotTool = &diagramTool{
 		name: "dot",
 		cmd:  dotCmd,
-		args: func(src string) []string { return []string{"-Tsvg", src} },
+		args: func(src, _ string) []string { return []string{"-Tsvg", src} },
 	}
 	mmdcTool = &diagramTool{
 		name: "mmdc",
 		cmd:  mmdcCmd,
-		args: func(src string) []string {
-			return []string{"--quiet", "--input", src, "--output", "-", "--outputFormat", "svg"}
+		args: func(src, bg string) []string {
+			args := []string{"--quiet", "--input", src, "--output", "-", "--outputFormat", "svg"}
+			if bg != "" {
+				args = append(args, "--backgroundColor", bg)
+			}
+			return args
 		},
 	}
 )
@@ -72,26 +77,30 @@ func renderDiagrams(doc *present.Doc, docFile string) {
 		return filepath.Join(dir, filepath.FromSlash(img.Source)), filepath.Join(dir, filepath.FromSlash(img.URL))
 	}
 
-	// Diagram files with the same SVG file, such as g.dot and g.mmd, would
-	// overwrite each other's renderings, so none of them is rendered.
-	sources := make(map[string][]string)
+	// Different renderings to the same SVG file, such as of g.dot and
+	// g.mmd, would overwrite each other, so none of them is made.
+	renderings := make(map[string][]string)
 	eachDiagram(doc, func(img *present.Image) {
 		src, out := paths(img)
-		if !slices.Contains(sources[out], src) {
-			sources[out] = append(sources[out], src)
+		r := src
+		if img.BackgroundColor != "" {
+			r = "-background-color " + img.BackgroundColor + " " + src
+		}
+		if !slices.Contains(renderings[out], r) {
+			renderings[out] = append(renderings[out], r)
 		}
 	})
 
 	eachDiagram(doc, func(img *present.Image) {
 		src, out := paths(img)
-		if srcs := sources[out]; len(srcs) > 1 {
-			err := fmt.Errorf("%s: all render to %s", strings.Join(srcs, ", "), out)
+		if rs := renderings[out]; len(rs) > 1 {
+			err := fmt.Errorf("%s: all render to %s", strings.Join(rs, ", "), out)
 			log.Print(err)
 			img.Error = trimContentDirs(err.Error())
 			img.Missing = true
 			return
 		}
-		svg, err := renderDiagram(src, out)
+		svg, err := renderDiagram(src, out, img.BackgroundColor)
 		if err != nil {
 			log.Print(err)
 			img.Error = trimContentDirs(err.Error())
@@ -128,11 +137,12 @@ func eachSectionDiagram(elems []present.Elem, f func(*present.Image)) {
 }
 
 // renderDiagram renders the diagram file src to the SVG file out, with the
-// tool for its extension, unless out already holds a rendering of the same
-// source. The rendering ends with a comment holding a hash of the source,
-// which is how it is recognized; out is left alone if rendering fails. It
-// returns the contents of out, if any, even with an error.
-func renderDiagram(src, out string) (svg []byte, err error) {
+// tool for its extension and the background color bg, if not empty, unless
+// out already holds the same rendering of the same source. The rendering
+// ends with a comment holding bg and a hash of the source, which is how it
+// is recognized; out is left alone if rendering fails. It returns the
+// contents of out, if any, even with an error.
+func renderDiagram(src, out, bg string) (svg []byte, err error) {
 	diagramMu.Lock()
 	defer diagramMu.Unlock()
 
@@ -145,7 +155,11 @@ func renderDiagram(src, out string) (svg []byte, err error) {
 	if err != nil {
 		return old, err
 	}
-	stamp := fmt.Appendf(nil, "<!-- present: %s sha256:%x -->\n", tool.name, sha256.Sum256(source))
+	var opts string
+	if bg != "" {
+		opts = " background-color=" + bg
+	}
+	stamp := fmt.Appendf(nil, "<!-- present: %s%s sha256:%x -->\n", tool.name, opts, sha256.Sum256(source))
 	if bytes.Contains(old, stamp) {
 		return old, nil
 	}
@@ -158,7 +172,7 @@ func renderDiagram(src, out string) (svg []byte, err error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, *tool.cmd, tool.args(filepath.Base(src))...)
+	cmd := exec.CommandContext(ctx, *tool.cmd, tool.args(filepath.Base(src), bg)...)
 	cmd.Dir = filepath.Dir(src)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

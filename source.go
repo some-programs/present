@@ -141,6 +141,16 @@ func commandFiles(lines []string, docFile, urlPath string) []sourceFile {
 		case ".html":
 			text = true
 		case ".image":
+			// Flags with their values, such as -background-color
+			// transparent, come before the file name.
+			rest := args[1:]
+			for len(rest) > 0 && strings.HasPrefix(rest[0], "-") {
+				rest = rest[min(2, len(rest)):]
+			}
+			name = ""
+			if len(rest) > 0 {
+				name = rest[0]
+			}
 			_, text = diagramTools[path.Ext(name)]
 		case ".background", ".video", ".iframe":
 		default:

@@ -62,17 +62,21 @@ func TestCommandFiles(t *testing.T) {
 	files := commandFiles([]string{
 		".code -edit -numbers code/fib/main.go /^func main/",
 		".play code/fib/main.go",
+		".image -background-color transparent diagrams/run.mmd 0.5",
 		".iframe https://go.dev/ 300 400",
 		".link https://go.dev/ Go",
 		"\\.code not/a/command.go",
 	}, "examples/code.slide", "/_examples/code.slide")
-	if len(files) != 2 {
-		t.Fatalf("got files %+v, want code/fib/main.go once and the iframe", files)
+	if len(files) != 3 {
+		t.Fatalf("got files %+v, want code/fib/main.go once, the diagram and the iframe", files)
 	}
 	if f := files[0]; f.Name != "code/fib/main.go" || f.Text == "" {
 		t.Errorf("code file = %+v, want its text", f)
 	}
-	if f := files[1]; f.URL != "https://go.dev/" || f.Text != "" {
+	if f := files[1]; f.Name != "diagrams/run.mmd" || f.Text == "" {
+		t.Errorf("diagram file = %+v, want its text", f)
+	}
+	if f := files[2]; f.URL != "https://go.dev/" || f.Text != "" {
 		t.Errorf("iframe = %+v, want its URL unchanged", f)
 	}
 }

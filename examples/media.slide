@@ -44,6 +44,13 @@ and shows parse errors over the old slides:
 
 .image diagrams/hot.mermaid
 
+## Diagrams of code
+
+Diagrams of code use the font of code on the slides, in Graphviz and Mermaid:
+
+.image diagrams/work.dot 0.3
+.image diagrams/work-flow.mmd 0.3
+
 ## A background
 
 .background images/background.svg

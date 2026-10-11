@@ -17,6 +17,9 @@ func TestParseImage(t *testing.T) {
 		{".image https://example.com/a.dot", Image{URL: "https://example.com/a.dot"}},
 		{".image a.mmd", Image{URL: "a.svg", Source: "a.mmd"}},
 		{".image g.v1/a.mermaid _ 0.5", Image{URL: "g.v1/a.svg", Source: "g.v1/a.mermaid", WidthFrac: 0.5}},
+		{".image -background-color transparent a.mmd 0.5", Image{URL: "a.svg", Source: "a.mmd", BackgroundColor: "transparent", WidthFrac: 0.5, HeightFrac: 0.5}},
+		{".image -background-color #f8f8f8 a.mermaid", Image{URL: "a.svg", Source: "a.mermaid", BackgroundColor: "#f8f8f8"}},
+		{".image -background-color rgb(0,0,0,0.5) a.mmd", Image{URL: "a.svg", Source: "a.mmd", BackgroundColor: "rgb(0,0,0,0.5)"}},
 	}
 	for _, tt := range tests {
 		elem, err := parseImage(nil, "x.slide", 1, tt.cmd)
@@ -39,6 +42,13 @@ func TestParseImage(t *testing.T) {
 		".image a.png _ -3",
 		".image a.png _ x",
 		".image a.png 1 2 3",
+		".image -background-color",
+		".image -background-color transparent",
+		".image -background-color -x a.mmd",
+		".image -background-color transparent a.png",
+		".image -background-color transparent a.dot",
+		".image -background-color transparent https://example.com/a.mmd",
+		".image -bg transparent a.mmd",
 	} {
 		if _, err := parseImage(nil, "x.slide", 1, cmd); err == nil {
 			t.Errorf("%s: no error", cmd)

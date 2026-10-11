@@ -38,7 +38,7 @@ printf '<svg>%s</svg>\n' "$(cat "$2")"
 	}
 	check := func(wantErr bool, wantSVG string, wantRuns int) {
 		t.Helper()
-		svg, err := renderDiagram(src, out)
+		svg, err := renderDiagram(src, out, "")
 		if (err != nil) != wantErr {
 			t.Errorf("renderDiagram error = %v, want error %v", err, wantErr)
 		}
@@ -116,7 +116,7 @@ printf '<svg>%s</svg>\n' "$(cat g.mmd)"
 	if err := os.WriteFile(src, []byte("graph TD"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	svg, err := renderDiagram(src, out)
+	svg, err := renderDiagram(src, out, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,10 +127,43 @@ printf '<svg>%s</svg>\n' "$(cat g.mmd)"
 	if err := os.WriteFile(src, []byte("bad"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err = renderDiagram(src, out)
+	_, err = renderDiagram(src, out, "")
 	want := src + ": Error: Parse error on line 1:\nbad\n---^"
 	if err == nil || err.Error() != want {
 		t.Errorf("renderDiagram error = %v, want %q", err, want)
+	}
+}
+
+func TestRenderMermaidBackground(t *testing.T) {
+	dir := t.TempDir()
+
+	// A stand-in for mmdc that writes its arguments as the SVG.
+	fake := filepath.Join(dir, "fakemmdc")
+	if err := os.WriteFile(fake, []byte("#!/bin/sh\nprintf '<svg>%s</svg>\\n' \"$*\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := *mmdcCmd
+	*mmdcCmd = fake
+	t.Cleanup(func() { *mmdcCmd = old })
+
+	src := filepath.Join(dir, "g.mmd")
+	out := filepath.Join(dir, "g.svg")
+	if err := os.WriteFile(src, []byte("graph TD"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct{ bg, want string }{
+		{"", "<svg>--quiet --input g.mmd --output - --outputFormat svg</svg>\n<!-- present: mmdc sha256:"},
+		{"transparent", "<svg>--quiet --input g.mmd --output - --outputFormat svg --backgroundColor transparent</svg>\n<!-- present: mmdc background-color=transparent sha256:"},
+		// A change of background alone renders again.
+		{"#fff", "<svg>--quiet --input g.mmd --output - --outputFormat svg --backgroundColor #fff</svg>\n<!-- present: mmdc background-color=#fff sha256:"},
+	} {
+		svg, err := renderDiagram(src, out, tt.bg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasPrefix(string(svg), tt.want) {
+			t.Errorf("renderDiagram with background %q = %q, want it to start with %q", tt.bg, svg, tt.want)
+		}
 	}
 }
 
@@ -151,8 +184,9 @@ func TestRenderDiagramsSameSVG(t *testing.T) {
 	write("g.dot", "digraph { a }", 0o644)
 	write("g.mmd", "graph TD", 0o644)
 	write("h.dot", "digraph { h }", 0o644)
+	write("k.mmd", "graph TD", 0o644)
 	docFile := filepath.Join(dir, "index.slide")
-	slides := "# Title\n\n## One\n.image g.dot\n.image h.dot\n\n## Two\n.image ./g.mmd\n.image h.dot\n"
+	slides := "# Title\n\n## One\n.image g.dot\n.image h.dot\n.image k.mmd\n\n## Two\n.image ./g.mmd\n.image h.dot\n.image -background-color transparent k.mmd\n"
 	doc, err := present.Parse(strings.NewReader(slides), docFile, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -161,10 +195,10 @@ func TestRenderDiagramsSameSVG(t *testing.T) {
 
 	var imgs []present.Image
 	eachDiagram(doc, func(img *present.Image) { imgs = append(imgs, *img) })
-	if len(imgs) != 4 {
-		t.Fatalf("got %d diagram images, want 4", len(imgs))
+	if len(imgs) != 6 {
+		t.Fatalf("got %d diagram images, want 6", len(imgs))
 	}
-	for _, i := range []int{0, 2} {
+	for _, i := range []int{0, 3} {
 		img := imgs[i]
 		if !img.Missing || !strings.Contains(img.Error, "g.dot") || !strings.Contains(img.Error, "g.mmd") || !strings.Contains(img.Error, "g.svg") {
 			t.Errorf("image %s: Missing = %v, Error = %q, want an error naming g.dot, g.mmd and g.svg", img.Source, img.Missing, img.Error)
@@ -173,8 +207,16 @@ func TestRenderDiagramsSameSVG(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "g.svg")); err == nil {
 		t.Errorf("g.svg was rendered")
 	}
+	// One diagram with two backgrounds is two renderings too.
+	for _, i := range []int{2, 5} {
+		img := imgs[i]
+		got := strings.ReplaceAll(img.Error, dir+string(filepath.Separator), "")
+		if want := "k.mmd, -background-color transparent k.mmd: all render to k.svg"; !img.Missing || got != want {
+			t.Errorf("image %s: Missing = %v, Error = %q, want %q", img.Source, img.Missing, got, want)
+		}
+	}
 	// The same diagram on two slides is fine.
-	for _, i := range []int{1, 3} {
+	for _, i := range []int{1, 4} {
 		img := imgs[i]
 		if img.Missing || img.Error != "" || !strings.HasPrefix(img.URL, "h.svg?v=") {
 			t.Errorf("image %s: URL = %q, Missing = %v, Error = %q, want it rendered", img.Source, img.URL, img.Missing, img.Error)
