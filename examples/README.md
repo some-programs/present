@@ -13,7 +13,8 @@ notes. Without a checkout, run
 and open Examples in the Documentation section of the index. There, press
 S on a slide to see its source beside it.
 
-- [intro.slide](intro.slide): the header, authors, Markdown text, tables, `.fontsize`,
+- [intro.slide](intro.slide): the keys and main flags for presenting, the header,
+  authors, Markdown text, tables, `.fontsize`,
   subsections, speaker notes and a block of them, comments, `.link`, `.html` and `.iframe`.
 - [code.slide](code.slide): `.code` with addresses, `OMIT`, highlighting,
   `-numbers` and `-edit`, `.fontsize`, and `.play` with a Go program, a

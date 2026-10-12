@@ -28,10 +28,6 @@ function setOpen(open) {
 function toggleSource() {
     setOpen(!isOpen());
 }
-function closeSource() {
-    if (isOpen())
-        setOpen(false);
-}
 // updateSource shows the source of slide no, counted from 0.
 function updateSource(no) {
     const i = Math.min(no, blocks.length - 1);

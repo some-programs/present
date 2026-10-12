@@ -388,6 +388,22 @@ pre code {
   font-size: 100%;
 }
 
+/* A key, drawn as a keycap in the colours of the code box. */
+kbd {
+  display: inline-block;
+  padding: 0 0.35em;
+  margin: 1px 0;
+  font-family: inherit;
+  font-size: 90%;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  background: rgb(240, 240, 240);
+  border: 1px solid rgb(204, 204, 204);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
 /* The elements after a .fontsize command, in the font-size it sets. The
    wrapper leaves the layout to the slide, and the sizes of code and
    subsection headings follow the text's, as they are at the default 26px. */

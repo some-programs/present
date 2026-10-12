@@ -15,6 +15,31 @@ https://example.com/
 Grace Example
 Compiler Whisperer
 
+## Presenting
+
+.fontsize 0.8
+
+| Key                                                         | Does                                      |
+|-------------------------------------------------------------|-------------------------------------------|
+| <kbd>→</kbd> <kbd>↓</kbd> <kbd>Space</kbd> <kbd>Enter</kbd> | next slide                                |
+| <kbd>←</kbd> <kbd>↑</kbd> <kbd>Backspace</kbd>              | previous slide                            |
+| <kbd>PgDn</kbd> <kbd>PgUp</kbd>                             | next, previous, also in a code block      |
+| <kbd>N</kbd>                                                | open the presenter notes, with `-notes`   |
+| <kbd>S</kbd>                                                | show the source of the slide, with `-doc` |
+| <kbd>H</kbd>                                                | hide the help text                        |
+
+| `present serve` cli flags | Does                                              |
+|---------------------------|---------------------------------------------------|
+| `-hot`                    | reload the slides when a file changes             |
+| `-notes`                  | enable the presenter notes                        |
+| `-doc`                    | serve the docs and these examples and source view |
+| `-play=false`             | do not run the programs of `.play`                |
+
+: Clicking the left or right edge of a slide, or swiping, also moves between slides.
+: Exported pages, like the examples on GitHub Pages, have no notes;
+: S works on them when they are exported with -source.
+: present serve -h lists all the flags.
+
 ## Text
 
 Section text is [CommonMark](https://commonmark.org/help/) Markdown:

@@ -72,7 +72,7 @@
     <aside id="source" class="no-print">
       {{range .}}
       <div class="src-slide" hidden>
-        <div class="src-title">Source of slide {{.Number}}<span>S or Esc closes</span></div>
+        <div class="src-title">Source of slide {{.Number}}<span>S closes</span></div>
         <div class="src-name">{{$.SourceFile}}</div>
         <pre class="src-markup">{{range .Lines}}<span class="{{.Class}}">{{.Text}}{{"\n"}}</span>{{end}}</pre>
         {{with .Files}}
@@ -92,7 +92,7 @@
       {{end}}
       {{/* Shown for slides that present adds, such as with -thankyou. */}}
       <div class="src-slide" hidden>
-        <div class="src-title">No source<span>S or Esc closes</span></div>
+        <div class="src-title">No source<span>S closes</span></div>
         <p>present adds this slide itself; it has no source.</p>
       </div>
     </aside>
@@ -101,8 +101,9 @@
     <div id="help">
       Use the left and right arrow keys or click the left and right
       edges of the page to navigate between slides.<br>
+      {{if .NotesEnabled}}Press 'N' to open the presenter notes.<br>{{end}}
       {{if .Sources}}Press 'S' to show or hide the source of the slide.<br>{{end}}
-      (Press 'H' or navigate to hide this message.)
+      (Press 'H', navigate or click this message to hide it.)
     </div>
 
     {{if .PlayEnabled}}

@@ -228,6 +228,7 @@ function setupInteraction() {
         el.addEventListener('click', onClick, false);
         slides?.appendChild(el);
     }
+    document.getElementById('help')?.addEventListener('click', hideHelpText);
     /* Swiping */
     document.body.addEventListener('touchstart', handleTouchStart, false);
 }
@@ -262,14 +263,6 @@ function handleBodyKeyDown(event) {
             // Hide the help text.
             if (!inCode)
                 hideHelpText();
-            break;
-        case 'Escape':
-            // Hide the help text and the source.
-            if (inCode)
-                break;
-            hideHelpText();
-            if (sourceEnabled)
-                closeSource();
             break;
         case 'PageDown':
             nextSlide();
