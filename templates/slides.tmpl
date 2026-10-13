@@ -74,14 +74,14 @@
       <div class="src-slide" hidden>
         <div class="src-title">Source of slide {{.Number}}<span>S closes</span></div>
         <div class="src-name">{{$.SourceFile}}</div>
-        <pre class="src-markup">{{range .Lines}}<span class="{{.Class}}">{{.Text}}{{"\n"}}</span>{{end}}</pre>
+        <pre class="src-markup src-lines">{{range .Lines}}<span class="src-n">{{.N}}</span><span class="{{.Class}}">{{.Text}}{{"\n"}}</span>{{end}}</pre>
         {{with .Files}}
         <h4>{{if eq (len .) 1}}File used{{else}}Files used{{end}}</h4>
         {{range .}}
         {{if .Text}}
         <details class="src-file" open>
           <summary><a href="{{.URL}}" target="_blank" rel="noopener">{{.Name}}</a></summary>
-          <pre>{{.Text}}</pre>
+          <pre class="src-lines">{{range .Lines}}<span class="src-n">{{.N}}</span><span>{{.Text}}{{"\n"}}</span>{{end}}</pre>
         </details>
         {{else}}
         <div class="src-file"><a href="{{.URL}}" target="_blank" rel="noopener">{{.Name}}</a></div>

@@ -32,18 +32,21 @@ type slideSource struct {
 	Files  []sourceFile // the files that the slide's commands use
 
 	lines []present.Line // the lines of Text
+	first int            // the line number of the first of lines, from 1
 }
 
-// A sourceLine is a line of a slideSource, with the class that marks what
-// it is in present markup, if anything.
+// A sourceLine is a line of a slideSource or a sourceFile, with its number
+// in the file and the class that marks what it is in present markup, if
+// anything.
 type sourceLine struct {
+	N           int
 	Text, Class string
 }
 
 // Lines returns the lines of s.Text.
 func (s slideSource) Lines() []sourceLine {
 	var lines []sourceLine
-	for _, l := range s.lines {
+	for i, l := range s.lines {
 		var class string
 		switch l.Kind {
 		case present.TitleLine, present.HeadingLine:
@@ -55,7 +58,7 @@ func (s slideSource) Lines() []sourceLine {
 		case present.CommentLine:
 			class = "src-comment"
 		}
-		lines = append(lines, sourceLine{l.Text, class})
+		lines = append(lines, sourceLine{s.first + i, l.Text, class})
 	}
 	return lines
 }
@@ -65,6 +68,15 @@ type sourceFile struct {
 	Name string // as written in the command
 	URL  string // where it is served
 	Text string // the contents of a text file, such as a program
+}
+
+// Lines returns the lines of f.Text.
+func (f sourceFile) Lines() []sourceLine {
+	var lines []sourceLine
+	for i, text := range strings.Split(strings.TrimSuffix(f.Text, "\n"), "\n") {
+		lines = append(lines, sourceLine{N: i + 1, Text: text})
+	}
+	return lines
 }
 
 // slideSources returns the sources of the slides of doc, parsed from src,
@@ -101,6 +113,7 @@ func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slid
 			Text:   strings.Join(text, "\n"),
 			Files:  commandFiles(slide, docFile, urlPath),
 			lines:  slide,
+			first:  start + 1,
 		})
 	}
 	return sources, nil

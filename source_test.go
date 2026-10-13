@@ -31,6 +31,14 @@ func TestSlideSources(t *testing.T) {
 			t.Errorf("slide %d has number %d", i+1, s.Number)
 		}
 	}
+	for i, s := range doc.Sections {
+		if n := sources[i+1].Lines()[0].N; n != s.Line {
+			t.Errorf("slide %d source starts at line %d, want %d", i+2, n, s.Line)
+		}
+	}
+	if n := sources[0].Lines()[0].N; n != 1 {
+		t.Errorf("title slide source starts at line %d, want 1", n)
+	}
 	if !strings.HasPrefix(sources[0].Text, "# ") {
 		t.Errorf("title slide source starts with %q, want the title", sources[0].Text)
 	}
@@ -120,10 +128,11 @@ func TestRenderDocSource(t *testing.T) {
 		}
 		for _, want := range []string{
 			`<div class="src-name">examples/intro.slide</div>`,
-			`<span class="src-heading">## Links and HTML` + "\n" + `</span>`,
-			`<span class="src-command">.html html/badge.html` + "\n" + `</span>`,
-			// The included HTML is shown as text.
-			`<pre>&lt;p style=`,
+			// Lines are numbered as in the presentation file.
+			`<span class="src-n">131</span><span class="src-heading">## Links and HTML` + "\n" + `</span>`,
+			`<span class="src-n">135</span><span class="src-command">.html html/badge.html` + "\n" + `</span>`,
+			// The included HTML is shown as text, numbered from 1.
+			`<pre class="src-lines"><span class="src-n">1</span><span>&lt;p style=`,
 		} {
 			if !strings.Contains(page, want) {
 				t.Errorf("page does not contain %q", want)

@@ -746,6 +746,18 @@ figcaption {
   border-radius: 6px;
 }
 
+/* Lines with their numbers, which are left out when the lines are copied. */
+#source .src-lines {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+}
+#source .src-n {
+  text-align: right;
+  color: rgb(150, 150, 150);
+  user-select: none;
+}
+
 /* The parts of present markup. */
 #source .src-heading {
   font-weight: bold;
