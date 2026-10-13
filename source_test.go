@@ -143,3 +143,19 @@ func TestSourceNotesBlock(t *testing.T) {
 		t.Errorf("files: got %+v, want only code/fib/main.go", files)
 	}
 }
+
+func TestSourceCodeBlock(t *testing.T) {
+	s := slideSource{Text: "## One\n\n```\n# shell comment\n.code in/code.go\n```\n.code code/fib/main.go"}
+	var classes []string
+	for _, l := range s.Lines() {
+		classes = append(classes, l.Class)
+	}
+	want := []string{"src-heading", "", "", "", "", "", "src-command"}
+	if !slices.Equal(classes, want) {
+		t.Errorf("classes: got %q, want %q", classes, want)
+	}
+	files := commandFiles(strings.Split(s.Text, "\n"), "examples/code.slide", "/_examples/code.slide")
+	if len(files) != 1 || files[0].Name != "code/fib/main.go" {
+		t.Errorf("files: got %+v, want only code/fib/main.go", files)
+	}
+}

@@ -256,3 +256,74 @@ func TestNotesBlock(t *testing.T) {
 		t.Errorf("unclosed block: got error %v", err)
 	}
 }
+
+// TestAdjacentLines checks that a line right after a text block, with no
+// blank line between them, is not lost.
+func TestAdjacentLines(t *testing.T) {
+	const input = "# Title\n\n## One\n\nText.\n: A note.\n   \n: Another note.\n"
+	doc, err := Parse(strings.NewReader(input), "x.slide", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := doc.Sections[0].Notes, []string{"A note.", "Another note."}; !slices.Equal(got, want) {
+		t.Errorf("notes: got %q, want %q", got, want)
+	}
+}
+
+func TestFencedCode(t *testing.T) {
+	const input = "# Title\n\n## One\n\n::: notes\n```\n:::\n```\n:::\n\n```\n: code\n::: notes\n```\n\n## Two\n"
+	doc, err := Parse(strings.NewReader(input), "x.slide", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Sections) != 2 {
+		t.Fatalf("got %d sections, want 2", len(doc.Sections))
+	}
+	if got, want := doc.Sections[0].Notes, []string{"```\n:::\n```"}; !slices.Equal(got, want) {
+		t.Errorf("notes: got %q, want %q", got, want)
+	}
+
+	for _, tt := range []struct{ input, want string }{
+		{"# Title\n\n## One\n\n```go\ncode\n## Two\n", "x.slide:5: fenced code block is not closed by a line with ```"},
+		{"# Title\n\n## One\n\n::: notes\n```\n:::\n", "x.slide:5: notes block is not closed by a line with :::"},
+		{"# Title\n\n## One\n\nText.\n\n# Two\n\n## Three\n", `x.slide:7: unexpected heading "# Two": only the title begins with "# ", and sections with "## "`},
+	} {
+		_, err := Parse(strings.NewReader(tt.input), "x.slide", 0)
+		if err == nil || err.Error() != tt.want {
+			t.Errorf("Parse(%q): got error %v, want %s", tt.input, err, tt.want)
+		}
+	}
+}
+
+func TestCodeFence(t *testing.T) {
+	for _, tt := range []struct {
+		line, fence string
+	}{
+		{"```", "```"},
+		{"```go", "```"},
+		{"   ~~~~ info `x`", "~~~~"},
+		{"    ```", ""},
+		{"``", ""},
+		{"``` `x`", ""},
+		{"\t```", ""},
+	} {
+		if fence, _ := codeFence(tt.line); fence != tt.fence {
+			t.Errorf("codeFence(%q) = %q, want %q", tt.line, fence, tt.fence)
+		}
+	}
+	for _, tt := range []struct {
+		line, fence string
+		want        bool
+	}{
+		{"```", "```", true},
+		{"  ````  ", "```", true},
+		{"``", "```", false},
+		{"``` go", "```", false},
+		{"~~~", "```", false},
+		{"    ```", "```", false},
+	} {
+		if got := closesFence(tt.line, tt.fence); got != tt.want {
+			t.Errorf("closesFence(%q, %q) = %v, want %v", tt.line, tt.fence, got, tt.want)
+		}
+	}
+}

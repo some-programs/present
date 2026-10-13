@@ -92,6 +92,11 @@ are treated as present comments and have no effect.
 Lines beginning with ": ", and blocks from a "::: notes" line to a ":::"
 line, are treated as speaker notes, described below.
 
+The lines of a fenced code block, from a line of three or more backticks
+or tildes to a line of at least as many of the same, are code, even those
+that look like commands, notes, comments or headings. A fenced code block
+must be closed.
+
 Example:
 
 	# Title of Talk

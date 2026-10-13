@@ -248,7 +248,13 @@ func (t Text) TemplateName() string { return "text" }
 type Lines struct {
 	line    int // 0 indexed, so has 1-indexed number of last line returned
 	text    []string
+	blocks  []Block // the block each line of text is in; see foldBlocks
 	comment string
+}
+
+// inCode reports whether the last line returned is in a fenced code block.
+func (l *Lines) inCode() bool {
+	return l.blocks[l.line-1] == CodeBlock
 }
 
 func readLines(r io.Reader) (*Lines, error) {
@@ -260,7 +266,7 @@ func readLines(r io.Reader) (*Lines, error) {
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
-	return &Lines{0, lines, "//"}, nil
+	return &Lines{text: lines, blocks: make([]Block, len(lines)), comment: "//"}, nil
 }
 
 func (l *Lines) next() (text string, ok bool) {
@@ -271,8 +277,9 @@ func (l *Lines) next() (text string, ok bool) {
 			return "", false
 		}
 		text = l.text[current]
-		// Lines starting with l.comment are comments.
-		if l.comment == "" || !strings.HasPrefix(text, l.comment) {
+		// Lines starting with l.comment are comments, but for those
+		// in fenced code blocks.
+		if l.comment == "" || !strings.HasPrefix(text, l.comment) || l.blocks[current] == CodeBlock {
 			ok = true
 			break
 		}
@@ -316,7 +323,7 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 	doc := new(Doc)
 	lines, err := readLines(r)
 	if err == nil {
-		err = foldNotesBlocks(name, lines)
+		err = foldBlocks(name, lines)
 	}
 	if err != nil {
 		return nil, err
@@ -336,6 +343,9 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 
 	const sectionPrefix = "##"
 	for i := lines.line; i < len(lines.text); i++ {
+		if lines.blocks[i] == CodeBlock {
+			continue
+		}
 		if strings.HasPrefix(lines.text[i], sectionPrefix) {
 			break
 		}
@@ -361,6 +371,11 @@ func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error
 	// Sections
 	if doc.Sections, err = parseSections(ctx, name, sectionPrefix, lines, []int{}); err != nil {
 		return nil, err
+	}
+	// The sections end only at a heading above their level, which
+	// would otherwise leave it and the rest of the file unread.
+	if text, ok := lines.nextNonEmpty(); ok {
+		return nil, fmt.Errorf("%s:%d: unexpected heading %q: only the title begins with \"# \", and sections with %q", name, lines.line, text, sectionPrefix+" ")
 	}
 
 	return doc, nil
@@ -455,17 +470,26 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 			default:
 				// Collect Markdown lines, including blank lines and indented text.
 				var block []string
-				endLine, endBlock := lines.line-1, -1 // end is last non-empty line
+				// The block ends at its last non-empty line, endLine, at
+				// which the next element starts reading. Its first line
+				// counts even when it is all blanks, so that it is not
+				// read again.
+				endLine, endBlock := lines.line, -1
 				for ok {
 					trim := strings.TrimSpace(text)
 					if trim != "" {
-						// Command breaks text block.
-						// Section heading breaks text block in markdown.
-						if text[0] == '.' || text[0] == '#' || isSpeakerNote(text) {
-							break
-						}
-						if strings.HasPrefix(text, `\.`) { // Backslash escapes initial period.
-							text = text[1:]
+						// In a fenced code block, every line is code.
+						if !lines.inCode() {
+							// Command breaks text block.
+							// Section heading breaks text block in markdown.
+							// So does a line that would start a subsection
+							// but for the space, which is an error.
+							if text[0] == '.' || isHeading.MatchString(text) || strings.HasPrefix(text, prefix+prefix[:1]) || isSpeakerNote(text) {
+								break
+							}
+							if strings.HasPrefix(text, `\.`) { // Backslash escapes initial period.
+								text = text[1:]
+							}
 						}
 						endLine, endBlock = lines.line, len(block)
 					}
@@ -473,7 +497,7 @@ func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int
 					text, ok = lines.next()
 				}
 				block = block[:endBlock+1]
-				lines.line = endLine + 1
+				lines.line = endLine
 				if len(block) == 0 {
 					break
 				}
@@ -654,30 +678,129 @@ func IsNotesBlockEnd(line string) bool {
 	return strings.TrimSpace(line) == ":::"
 }
 
-// foldNotesBlocks turns each block of notes in lines into a single speaker
-// note holding the lines of the block, so that the parser takes it like
-// any other note. The note is on the line that starts the block, and the
-// other lines of the block become comments, so that lines keep their
-// numbers. Comments in the block are kept, since the block is folded
-// before comments are skipped.
-func foldNotesBlocks(name string, lines *Lines) error {
-	text := lines.text
-	for i := 0; i < len(text); i++ {
-		if !IsNotesBlockStart(text[i]) {
+// A Block is the kind of block that a line of a present file is in: a
+// fenced code block, a block of notes, or neither. The lines of a block
+// are Markdown, even those that look like commands, notes, comments or
+// headings.
+type Block int
+
+const (
+	NoBlock    Block = iota
+	CodeBlock        // a fenced code block, from its opening fence to its closing one
+	NotesBlock       // a block of notes, from its "::: notes" line to its ":::" line
+)
+
+// Blocks returns the block that each of lines, the lines of a present
+// file, is in. A block that is not closed runs to the end of lines.
+func Blocks(lines []string) []Block {
+	blocks := make([]Block, len(lines))
+	for _, b := range findBlocks(lines) {
+		for i := b.start; i <= b.end; i++ {
+			blocks[i] = b.kind
+		}
+	}
+	return blocks
+}
+
+// A blockRange is a block of lines in a present file.
+type blockRange struct {
+	kind       Block
+	start, end int // the indexes of the first and the last line
+	closed     bool
+}
+
+// findBlocks returns the fenced code blocks and the blocks of notes in
+// lines, in order. A block of notes is not ended by a ":::" line in a
+// fenced code block in it.
+func findBlocks(lines []string) []blockRange {
+	var blocks []blockRange
+	for i := 0; i < len(lines); i++ {
+		b := blockRange{start: i, end: len(lines) - 1}
+		if fence, ok := codeFence(lines[i]); ok {
+			b.kind = CodeBlock
+			for j := i + 1; j < len(lines); j++ {
+				if closesFence(lines[j], fence) {
+					b.end, b.closed = j, true
+					break
+				}
+			}
+		} else if IsNotesBlockStart(lines[i]) {
+			b.kind = NotesBlock
+			fence := ""
+			for j := i + 1; j < len(lines); j++ {
+				if fence != "" {
+					if closesFence(lines[j], fence) {
+						fence = ""
+					}
+				} else if IsNotesBlockEnd(lines[j]) {
+					b.end, b.closed = j, true
+					break
+				} else if f, ok := codeFence(lines[j]); ok {
+					fence = f
+				}
+			}
+		} else {
 			continue
 		}
-		end := i + 1
-		for end < len(text) && !IsNotesBlockEnd(text[end]) {
-			end++
+		blocks = append(blocks, b)
+		i = b.end
+	}
+	return blocks
+}
+
+// codeFence returns the fence that line opens a fenced code block with, if
+// it does: at least three backticks or tildes, after at most three spaces,
+// and with no backtick after backticks, as in CommonMark.
+func codeFence(line string) (fence string, ok bool) {
+	rest := strings.TrimLeft(line, " ")
+	if len(line)-len(rest) > 3 || rest == "" || (rest[0] != '`' && rest[0] != '~') {
+		return "", false
+	}
+	info := strings.TrimLeft(rest, rest[:1])
+	fence = rest[:len(rest)-len(info)]
+	if len(fence) < 3 || (fence[0] == '`' && strings.Contains(info, "`")) {
+		return "", false
+	}
+	return fence, true
+}
+
+// closesFence reports whether line closes a fenced code block opened by
+// fence: it has at least as many of the same character, after at most
+// three spaces, and nothing else but spaces.
+func closesFence(line, fence string) bool {
+	rest := strings.TrimLeft(line, " ")
+	if len(line)-len(rest) > 3 || !strings.HasPrefix(rest, fence) {
+		return false
+	}
+	return strings.TrimSpace(strings.TrimLeft(rest, fence[:1])) == ""
+}
+
+// foldBlocks records the block that each line is in, and turns each block
+// of notes in lines into a single speaker note holding the lines of the
+// block, so that the parser takes it like any other note. The note is on
+// the line that starts the block, and the other lines of the block become
+// comments, so that lines keep their numbers. Comments in the block are
+// kept, since the block is folded before comments are skipped. A block
+// that is not closed is an error.
+func foldBlocks(name string, lines *Lines) error {
+	text := lines.text
+	for _, b := range findBlocks(text) {
+		switch {
+		case !b.closed && b.kind == CodeBlock:
+			fence, _ := codeFence(text[b.start])
+			return fmt.Errorf("%s:%d: fenced code block is not closed by a line with %s", name, b.start+1, fence)
+		case !b.closed:
+			return fmt.Errorf("%s:%d: notes block is not closed by a line with :::", name, b.start+1)
 		}
-		if end == len(text) {
-			return fmt.Errorf("%s:%d: notes block is not closed by a line with :::", name, i+1)
+		for i := b.start; i <= b.end; i++ {
+			lines.blocks[i] = b.kind
 		}
-		text[i] = ": " + strings.Join(text[i+1:end], "\n")
-		for j := i + 1; j <= end; j++ {
-			text[j] = lines.comment
+		if b.kind == NotesBlock {
+			text[b.start] = ": " + strings.Join(text[b.start+1:b.end], "\n")
+			for i := b.start + 1; i <= b.end; i++ {
+				text[i] = lines.comment
+			}
 		}
-		i = end
 	}
 	return nil
 }
