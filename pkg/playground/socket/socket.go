@@ -7,11 +7,12 @@
 // the server sends the output and exit status of the running processes.
 // Multiple clients running multiple processes may be served concurrently.
 // The wire format is JSON and is described by the Message type.
-package socket // import "github.com/some-programs/present/pkg/playground/socket"
+package socket
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"go/parser"
 	"go/token"
@@ -48,7 +49,7 @@ type Message struct {
 	Id      string // client-provided unique id for the process
 	Kind    string // in: "run", "kill" out: "stdout", "stderr", "end"
 	Body    string
-	Options *Options `json:",omitempty"`
+	Options *Options `json:",omitzero"`
 }
 
 // Options specify additional message options.
@@ -96,10 +97,10 @@ func socketHandler(c *websocket.Conn) {
 
 	// Decode messages from client and send to the in channel.
 	go func() {
-		dec := json.NewDecoder(c)
+		dec := jsontext.NewDecoder(c)
 		for {
 			var m Message
-			if err := dec.Decode(&m); err != nil {
+			if err := json.UnmarshalDecode(dec, &m); err != nil {
 				errc <- err
 				return
 			}
@@ -108,10 +109,15 @@ func socketHandler(c *websocket.Conn) {
 	}()
 
 	// Receive messages from the out channel and encode to the client.
+	// Each message is written in a single Write, so that it is sent as a
+	// single websocket frame.
 	go func() {
-		enc := json.NewEncoder(c)
 		for m := range out {
-			if err := enc.Encode(m); err != nil {
+			b, err := json.Marshal(m)
+			if err == nil {
+				_, err = c.Write(b)
+			}
+			if err != nil {
 				errc <- err
 				return
 			}
@@ -197,7 +203,7 @@ func (p *process) end(err error) {
 	}
 	m := &Message{Kind: "end"}
 	if err != nil {
-		m.Body = err.Error()
+		m.Body = safeString([]byte(err.Error()))
 	}
 	p.out <- m
 	close(p.out)

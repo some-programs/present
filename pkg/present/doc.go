@@ -471,4 +471,4 @@ example:
 	    go test ./...
 	:::
 */
-package present // import "github.com/some-programs/present/pkg/present"
+package present

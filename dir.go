@@ -74,8 +74,7 @@ func serveError(w http.ResponseWriter, r *http.Request, name string, err error) 
 	}
 	log.Printf("request from %s: %s", addr, err)
 
-	var pathErr *fs.PathError
-	if errors.As(err, &pathErr) && pathErr.Path == name && errors.Is(err, fs.ErrNotExist) {
+	if pathErr, ok := errors.AsType[*fs.PathError](err); ok && pathErr.Path == name && errors.Is(err, fs.ErrNotExist) {
 		http.NotFound(w, r)
 		return
 	}
