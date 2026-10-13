@@ -6,303 +6,12 @@ package present
 
 import (
 	"bufio"
-	"bytes"
-	"errors"
 	"fmt"
-	"html/template"
 	"io"
-	"log"
-	"net/url"
 	"os"
-	"regexp"
 	"slices"
 	"strings"
-	"time"
-
-	"github.com/yuin/goldmark/v2/ast"
-	"github.com/yuin/goldmark/v2/extension"
-	"github.com/yuin/goldmark/v2/parser"
-	"github.com/yuin/goldmark/v2/renderer/html"
-	"github.com/yuin/goldmark/v2/text"
 )
-
-var (
-	parsers = make(map[string]ParseFunc)
-	funcs   = template.FuncMap{}
-)
-
-// Template returns an empty template with the action functions in its FuncMap.
-func Template() *template.Template {
-	return template.New("").Funcs(funcs)
-}
-
-// Render renders the doc to the given writer using the provided template.
-func (d *Doc) Render(w io.Writer, t *template.Template) error {
-	data := struct {
-		*Doc
-		Template       *template.Template
-		PlayEnabled    bool
-		NotesEnabled   bool
-		PreloadEnabled bool
-	}{d, t, PlayEnabled, NotesEnabled, PreloadEnabled}
-	return t.ExecuteTemplate(w, "root", data)
-}
-
-// Render renders the section to the given writer using the provided template.
-func (s *Section) Render(w io.Writer, t *template.Template) error {
-	data := struct {
-		*Section
-		Template    *template.Template
-		PlayEnabled bool
-	}{s, t, PlayEnabled}
-	return t.ExecuteTemplate(w, "section", data)
-}
-
-type ParseFunc func(ctx *Context, fileName string, lineNumber int, inputLine string) (Elem, error)
-
-// Register binds the named action, which does not begin with a period, to the
-// specified parser to be invoked when the name, with a period, appears in the
-// present input text.
-func Register(name string, parser ParseFunc) {
-	if len(name) == 0 || name[0] == ';' {
-		panic("bad name in Register: " + name)
-	}
-	parsers["."+name] = parser
-}
-
-// Doc represents an entire document.
-type Doc struct {
-	Title      string
-	Subtitle   string
-	Summary    string
-	Time       time.Time
-	Authors    []Author
-	TitleNotes []string // the notes of the title slide; see Section.Notes
-	Sections   []Section
-	Tags       []string
-}
-
-// Author represents the person who wrote and/or is presenting the document.
-type Author struct {
-	Elem []Elem
-}
-
-// TextElem returns the first text elements of the author details.
-// This is used to display the author' name, job title, and company
-// without the contact details.
-func (p *Author) TextElem() (elems []Elem) {
-	for _, el := range p.Elem {
-		if _, ok := el.(Text); !ok {
-			break
-		}
-		elems = append(elems, el)
-	}
-	return
-}
-
-// Section represents a section of a document (such as a presentation slide)
-// comprising a title and a list of elements.
-type Section struct {
-	Number  []int
-	Title   string
-	ID      string // HTML anchor ID
-	Elem    []Elem
-	Notes   []string // Markdown, each a line of notes or a block of them
-	Classes []string
-	Styles  []string
-
-	// Background is the image of a .background command, if any.
-	Background string
-
-	// Line is the line number of the section's heading in the file.
-	Line int
-}
-
-// HTMLAttributes for the section
-func (s Section) HTMLAttributes() template.HTMLAttr {
-	if len(s.Classes) == 0 && len(s.Styles) == 0 {
-		return ""
-	}
-
-	var class string
-	if len(s.Classes) > 0 {
-		class = fmt.Sprintf(`class=%q`, strings.Join(s.Classes, " "))
-	}
-	var style string
-	if len(s.Styles) > 0 {
-		style = fmt.Sprintf(`style=%q`, strings.Join(s.Styles, " "))
-	}
-	return template.HTMLAttr(strings.Join([]string{class, style}, " "))
-}
-
-// Sections contained within the section.
-func (s Section) Sections() (sections []Section) {
-	for _, e := range s.Elem {
-		if section, ok := e.(Section); ok {
-			sections = append(sections, section)
-		}
-	}
-	return
-}
-
-// Level returns the level of the given section.
-// The document title is level 1, main section 2, etc.
-func (s Section) Level() int {
-	return len(s.Number) + 1
-}
-
-// FormattedNumber returns a string containing the concatenation of the
-// numbers identifying a Section.
-func (s Section) FormattedNumber() string {
-	b := &bytes.Buffer{}
-	for _, n := range s.Number {
-		fmt.Fprintf(b, "%v.", n)
-	}
-	return b.String()
-}
-
-func (s Section) TemplateName() string { return "section" }
-
-// Elem defines the interface for a present element. That is, something that
-// can provide the name of the template used to render the element.
-type Elem interface {
-	TemplateName() string
-}
-
-// renderElem implements the elem template function, used to render
-// sub-templates.
-func renderElem(t *template.Template, e Elem) (template.HTML, error) {
-	var data any = e
-	if s, ok := e.(Section); ok {
-		data = struct {
-			Section
-			Template *template.Template
-		}{s, t}
-	}
-	return execTemplate(t, e.TemplateName(), data)
-}
-
-// renderElems implements the elems template function, which renders a list
-// of elements. Each run of elements after a FontSize is wrapped in a div of
-// class "fontsize" that sets its size.
-func renderElems(t *template.Template, elems []Elem) (template.HTML, error) {
-	var b strings.Builder
-	open := false
-	for _, e := range elems {
-		if f, ok := e.(FontSize); ok {
-			if open {
-				b.WriteString("</div>")
-			}
-			// f.Size is safe in the attribute: parseFontSize made it.
-			fmt.Fprintf(&b, `<div class="fontsize" style="font-size: %s">`, f.Size)
-			open = true
-			continue
-		}
-		html, err := renderElem(t, e)
-		if err != nil {
-			return "", err
-		}
-		b.WriteString(string(html))
-	}
-	if open {
-		b.WriteString("</div>")
-	}
-	return template.HTML(b.String()), nil
-}
-
-// pageNum derives a page number from a section.
-func pageNum(s Section, offset int) int {
-	if len(s.Number) == 0 {
-		return offset
-	}
-	return s.Number[0] + offset
-}
-
-func init() {
-	funcs["elem"] = renderElem
-	funcs["elems"] = renderElems
-	funcs["pagenum"] = pageNum
-	funcs["markdown"] = renderInlineMarkdown
-	funcs["markdownBlock"] = func(s string) (template.HTML, error) { return renderMarkdown([]byte(s)) }
-}
-
-// execTemplate is a helper to execute a template and return the output as a
-// template.HTML value.
-func execTemplate(t *template.Template, name string, data any) (template.HTML, error) {
-	b := new(bytes.Buffer)
-	err := t.ExecuteTemplate(b, name, data)
-	if err != nil {
-		return "", err
-	}
-	return template.HTML(b.String()), nil
-}
-
-// Text represents a paragraph of plain text.
-type Text struct {
-	Lines []string
-}
-
-func (t Text) TemplateName() string { return "text" }
-
-// Lines is a helper for parsing line-based input.
-type Lines struct {
-	line    int // 0 indexed, so has 1-indexed number of last line returned
-	text    []string
-	blocks  []Block // the block each line of text is in; see foldBlocks
-	comment string
-}
-
-// inCode reports whether the last line returned is in a fenced code block.
-func (l *Lines) inCode() bool {
-	return l.blocks[l.line-1] == CodeBlock
-}
-
-func readLines(r io.Reader) (*Lines, error) {
-	var lines []string
-	s := bufio.NewScanner(r)
-	for s.Scan() {
-		lines = append(lines, s.Text())
-	}
-	if err := s.Err(); err != nil {
-		return nil, err
-	}
-	return &Lines{text: lines, blocks: make([]Block, len(lines)), comment: "//"}, nil
-}
-
-func (l *Lines) next() (text string, ok bool) {
-	for {
-		current := l.line
-		l.line++
-		if current >= len(l.text) {
-			return "", false
-		}
-		text = l.text[current]
-		// Lines starting with l.comment are comments, but for those
-		// in fenced code blocks.
-		if l.comment == "" || !strings.HasPrefix(text, l.comment) || l.blocks[current] == CodeBlock {
-			ok = true
-			break
-		}
-	}
-	return
-}
-
-func (l *Lines) back() {
-	l.line--
-}
-
-func (l *Lines) nextNonEmpty() (text string, ok bool) {
-	for {
-		text, ok = l.next()
-		if !ok {
-			return
-		}
-		if len(text) > 0 {
-			break
-		}
-	}
-	return
-}
 
 // A Context specifies the supporting context for parsing a presentation.
 type Context struct {
@@ -320,65 +29,14 @@ const (
 
 // Parse parses a document from r.
 func (ctx *Context) Parse(r io.Reader, name string, mode ParseMode) (*Doc, error) {
-	doc := new(Doc)
-	lines, err := readLines(r)
-	if err == nil {
-		err = foldBlocks(name, lines)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// The title line must begin with "# ".
-	// Files without it use the legacy present markup, which is not supported.
-	for i, line := range lines.text {
-		if line == "" {
-			continue
-		}
-		if !strings.HasPrefix(line, "# ") {
-			return nil, fmt.Errorf("%s:%d: title must begin with \"# \" (legacy present markup is not supported; convert it with present convert-legacy)", name, i+1)
-		}
-		break
-	}
-
-	const sectionPrefix = "##"
-	for i := lines.line; i < len(lines.text); i++ {
-		if lines.blocks[i] == CodeBlock {
-			continue
-		}
-		if strings.HasPrefix(lines.text[i], sectionPrefix) {
-			break
-		}
-
-		if isSpeakerNote(lines.text[i]) {
-			doc.TitleNotes = append(doc.TitleNotes, trimSpeakerNote(lines.text[i]))
-		}
-	}
-
-	err = parseHeader(doc, lines)
+	f, err := parseFile(r, name, mode)
 	if err != nil {
 		return nil, err
 	}
 	if mode&TitlesOnly != 0 {
-		return doc, nil
+		return f.doc, nil
 	}
-
-	// Authors
-	if doc.Authors, err = parseAuthors(name, sectionPrefix, lines); err != nil {
-		return nil, err
-	}
-
-	// Sections
-	if doc.Sections, err = parseSections(ctx, name, sectionPrefix, lines, []int{}); err != nil {
-		return nil, err
-	}
-	// The sections end only at a heading above their level, which
-	// would otherwise leave it and the rest of the file unread.
-	if text, ok := lines.nextNonEmpty(); ok {
-		return nil, fmt.Errorf("%s:%d: unexpected heading %q: only the title begins with \"# \", and sections with %q", name, lines.line, text, sectionPrefix+" ")
-	}
-
-	return doc, nil
+	return f.build(ctx)
 }
 
 // Parse parses a document from r. Parse reads assets used by the presentation
@@ -388,469 +46,118 @@ func Parse(r io.Reader, name string, mode ParseMode) (*Doc, error) {
 	return ctx.Parse(r, name, mode)
 }
 
-// isHeading matches any section heading.
-var isHeading = regexp.MustCompile(`^\#+( |$)`)
+// A file is a present file, parsed, but with its commands not run.
+type file struct {
+	name  string
+	lines []string   // the lines of the file, as read
+	kinds []LineKind // the kind of each line
+	doc   *Doc       // the header and the authors, until build adds the sections
 
-// lesserHeading returns true if text is a heading of a lesser or equal level
-// than that denoted by prefix.
-func lesserHeading(text, prefix string) bool {
-	return isHeading.MatchString(text) && !strings.HasPrefix(text, prefix+prefix[:1])
+	// notes are the blocks of notes, by the indexes of the lines that
+	// start and end them.
+	notes [][2]int
+
+	// sections are the sections, or nil with TitlesOnly.
+	sections *sections
+
+	// verbatim marks the lines of the sections whose spaces matter, as in
+	// code, and hardBreak those that end in a hard line break.
+	verbatim, hardBreak []bool
 }
 
-// parseSections parses Sections from lines for the section level indicated by
-// number (a nil number indicates the top level).
-func parseSections(ctx *Context, name, prefix string, lines *Lines, number []int) ([]Section, error) {
-	var sections []Section
-	for i := 1; ; i++ {
-		// Next non-empty line is title.
-		text, ok := lines.nextNonEmpty()
-		for ok && text == "" {
-			text, ok = lines.next()
-		}
-		if !ok {
-			break
-		}
-		if text != prefix && !strings.HasPrefix(text, prefix+" ") {
-			lines.back()
-			break
-		}
-		// Sections can end in {#id} to set the HTML anchor for the section.
-		// This is nicer than the default #TOC_1_2-style anchor.
-		title := strings.TrimSpace(text[len(prefix):])
-		id := ""
-		if rest, ok := strings.CutSuffix(title, "}"); ok {
-			if before, after, ok := strings.CutLast(rest, "{#"); ok {
-				title, id = strings.TrimSpace(before), after
-			}
-		}
-		section := Section{
-			Number: append(slices.Clone(number), i),
-			Title:  title,
-			ID:     id,
-			Line:   lines.line,
-		}
-		text, ok = lines.nextNonEmpty()
-		for ok && !lesserHeading(text, prefix) {
-			var e Elem
-			switch {
-			case isSpeakerNote(text):
-				section.Notes = append(section.Notes, trimSpeakerNote(text))
-			case strings.HasPrefix(text, prefix+prefix[:1]+" ") || text == prefix+prefix[:1]:
-				lines.back()
-				subsecs, err := parseSections(ctx, name, prefix+prefix[:1], lines, section.Number)
-				if err != nil {
-					return nil, err
-				}
-				for _, ss := range subsecs {
-					section.Elem = append(section.Elem, ss)
-				}
-			case strings.HasPrefix(text, prefix+prefix[:1]):
-				return nil, fmt.Errorf("%s:%d: badly nested section inside %s: %s", name, lines.line, prefix, text)
-			case strings.HasPrefix(text, "."):
-				args := strings.Fields(text)
-				if args[0] == ".background" {
-					if len(args) != 2 {
-						return nil, fmt.Errorf("%s:%d: .background expects exactly one argument", name, lines.line)
-					}
-					section.Background = args[1]
-					section.Classes = append(section.Classes, "background")
-					section.Styles = append(section.Styles, "background-image: url('"+args[1]+"')")
-					break
-				}
-				parser := parsers[args[0]]
-				if parser == nil {
-					return nil, fmt.Errorf("%s:%d: unknown command %q", name, lines.line, text)
-				}
-				t, err := parser(ctx, name, lines.line, text)
-				if err != nil {
-					return nil, err
-				}
-				e = t
-
-			default:
-				// Collect Markdown lines, including blank lines and indented text.
-				var block []string
-				// The block ends at its last non-empty line, endLine, at
-				// which the next element starts reading. Its first line
-				// counts even when it is all blanks, so that it is not
-				// read again.
-				endLine, endBlock := lines.line, -1
-				for ok {
-					trim := strings.TrimSpace(text)
-					if trim != "" {
-						// In a fenced code block, every line is code.
-						if !lines.inCode() {
-							// Command breaks text block.
-							// Section heading breaks text block in markdown.
-							// So does a line that would start a subsection
-							// but for the space, which is an error.
-							if text[0] == '.' || isHeading.MatchString(text) || strings.HasPrefix(text, prefix+prefix[:1]) || isSpeakerNote(text) {
-								break
-							}
-							if strings.HasPrefix(text, `\.`) { // Backslash escapes initial period.
-								text = text[1:]
-							}
-						}
-						endLine, endBlock = lines.line, len(block)
-					}
-					block = append(block, text)
-					text, ok = lines.next()
-				}
-				block = block[:endBlock+1]
-				lines.line = endLine
-				if len(block) == 0 {
-					break
-				}
-
-				// Replace all leading tabs with 4 spaces,
-				// which render better in code blocks.
-				// CommonMark defines that for parsing the structure of the file
-				// a tab is equivalent to 4 spaces, so this change won't
-				// affect the later parsing at all.
-				// An alternative would be to apply this to code blocks after parsing,
-				// at the same time that we update <a> targets, but that turns out
-				// to be quite difficult to modify in the AST.
-				for i, line := range block {
-					if len(line) > 0 && line[0] == '\t' {
-						short := strings.TrimLeft(line, "\t")
-						line = strings.Repeat("    ", len(line)-len(short)) + short
-						block[i] = line
-					}
-				}
-				html, err := renderMarkdown([]byte(strings.Join(block, "\n")))
-				if err != nil {
-					return nil, err
-				}
-				e = HTML{HTML: html}
-
-			}
-			if e != nil {
-				section.Elem = append(section.Elem, e)
-			}
-			text, ok = lines.nextNonEmpty()
-		}
-		if isHeading.MatchString(text) {
-			lines.back()
-		}
-		sections = append(sections, section)
-	}
-
-	if len(sections) == 0 {
-		return nil, fmt.Errorf("%s:%d: unexpected line: %s", name, lines.line+1, lines.text[lines.line])
-	}
-	return sections, nil
-}
-
-func parseHeader(doc *Doc, lines *Lines) error {
-	var ok bool
-	// First non-empty line starts header.
-	doc.Title, ok = lines.nextNonEmpty()
-	if !ok {
-		return errors.New("unexpected EOF; expected title")
-	}
-	doc.Title = strings.TrimSpace(strings.TrimPrefix(doc.Title, "#"))
-
-	for {
-		text, ok := lines.next()
-		if !ok {
-			return errors.New("unexpected EOF")
-		}
-		if text == "" {
-			break
-		}
-		if isSpeakerNote(text) {
-			continue
-		}
-		if tags, ok := strings.CutPrefix(text, "Tags:"); ok {
-			for tag := range strings.SplitSeq(tags, ",") {
-				doc.Tags = append(doc.Tags, strings.TrimSpace(tag))
-			}
-		} else if summary, ok := strings.CutPrefix(text, "Summary:"); ok {
-			doc.Summary = strings.TrimSpace(summary)
-		} else if t, ok := parseTime(text); ok {
-			doc.Time = t
-		} else if doc.Subtitle == "" {
-			doc.Subtitle = text
-		} else {
-			return fmt.Errorf("unexpected header line: %q", text)
-		}
-	}
-	return nil
-}
-
-func parseAuthors(name, sectionPrefix string, lines *Lines) (authors []Author, err error) {
-	// This grammar demarcates authors with blanks.
-
-	// Skip blank lines.
-	if _, ok := lines.nextNonEmpty(); !ok {
-		return nil, errors.New("unexpected EOF")
-	}
-	lines.back()
-
-	var a *Author
-	for {
-		text, ok := lines.next()
-		if !ok {
-			return nil, errors.New("unexpected EOF")
-		}
-
-		// If we find a section heading, we're done.
-		if strings.HasPrefix(text, sectionPrefix) {
-			lines.back()
-			break
-		}
-
-		if isSpeakerNote(text) {
-			continue
-		}
-
-		// If we encounter a blank we're done with this author.
-		if a != nil && len(text) == 0 {
-			authors = append(authors, *a)
-			a = nil
-			continue
-		}
-		if a == nil {
-			a = new(Author)
-		}
-
-		// Parse the line. Those that
-		// - begin with @ are twitter names,
-		// - contain slashes are links, or
-		// - contain an @ symbol are an email address.
-		// The rest is just text.
-		var el Elem
-		switch {
-		case strings.HasPrefix(text, "@"):
-			el = parseAuthorURL(name, "http://twitter.com/"+text[1:])
-		case strings.Contains(text, ":"):
-			el = parseAuthorURL(name, text)
-		case strings.Contains(text, "@"):
-			el = parseAuthorURL(name, "mailto:"+text)
-		}
-		if l, ok := el.(Link); ok {
-			l.Label = text
-			el = l
-		}
-		if el == nil {
-			el = Text{Lines: []string{text}}
-		}
-		a.Elem = append(a.Elem, el)
-	}
-	if a != nil {
-		authors = append(authors, *a)
-	}
-	return authors, nil
-}
-
-func parseAuthorURL(name, text string) Elem {
-	u, err := url.Parse(text)
+// parseFile parses the present file in r, called name, without running
+// its commands.
+func parseFile(r io.Reader, name string, mode ParseMode) (*file, error) {
+	text, err := readText(r)
 	if err != nil {
-		log.Printf("parsing %s author block: invalid URL %q: %v", name, text, err)
-		return nil
+		return nil, err
 	}
-	return Link{URL: u}
-}
-
-func parseTime(text string) (t time.Time, ok bool) {
-	t, err := time.Parse("15:04 2 Jan 2006", text)
-	if err == nil {
-		return t, true
+	f := &file{
+		name:      name,
+		lines:     text,
+		kinds:     make([]LineKind, len(text)),
+		doc:       new(Doc),
+		verbatim:  make([]bool, len(text)),
+		hardBreak: make([]bool, len(text)),
 	}
-	t, err = time.Parse("2 Jan 2006", text)
-	if err == nil {
-		// at 11am UTC it is the same date everywhere
-		t = t.Add(time.Hour * 11)
-		return t, true
-	}
-	return time.Time{}, false
-}
 
-// IsNotesBlockStart reports whether line starts a block of notes, which
-// runs up to a line for which IsNotesBlockEnd reports true.
-func IsNotesBlockStart(line string) bool {
-	rest, ok := strings.CutPrefix(strings.TrimSpace(line), ":::")
-	return ok && strings.TrimSpace(rest) == "notes"
-}
-
-// IsNotesBlockEnd reports whether line ends a block of notes.
-func IsNotesBlockEnd(line string) bool {
-	return strings.TrimSpace(line) == ":::"
-}
-
-// A Block is the kind of block that a line of a present file is in: a
-// fenced code block, a block of notes, or neither. The lines of a block
-// are Markdown, even those that look like commands, notes, comments or
-// headings.
-type Block int
-
-const (
-	NoBlock    Block = iota
-	CodeBlock        // a fenced code block, from its opening fence to its closing one
-	NotesBlock       // a block of notes, from its "::: notes" line to its ":::" line
-)
-
-// Blocks returns the block that each of lines, the lines of a present
-// file, is in. A block that is not closed runs to the end of lines.
-func Blocks(lines []string) []Block {
-	blocks := make([]Block, len(lines))
-	for _, b := range findBlocks(lines) {
-		for i := b.start; i <= b.end; i++ {
-			blocks[i] = b.kind
-		}
-	}
-	return blocks
-}
-
-// A blockRange is a block of lines in a present file.
-type blockRange struct {
-	kind       Block
-	start, end int // the indexes of the first and the last line
-	closed     bool
-}
-
-// findBlocks returns the fenced code blocks and the blocks of notes in
-// lines, in order. A block of notes is not ended by a ":::" line in a
-// fenced code block in it.
-func findBlocks(lines []string) []blockRange {
-	var blocks []blockRange
-	for i := 0; i < len(lines); i++ {
-		b := blockRange{start: i, end: len(lines) - 1}
-		if fence, ok := codeFence(lines[i]); ok {
-			b.kind = CodeBlock
-			for j := i + 1; j < len(lines); j++ {
-				if closesFence(lines[j], fence) {
-					b.end, b.closed = j, true
-					break
-				}
-			}
-		} else if IsNotesBlockStart(lines[i]) {
-			b.kind = NotesBlock
-			fence := ""
-			for j := i + 1; j < len(lines); j++ {
-				if fence != "" {
-					if closesFence(lines[j], fence) {
-						fence = ""
-					}
-				} else if IsNotesBlockEnd(lines[j]) {
-					b.end, b.closed = j, true
-					break
-				} else if f, ok := codeFence(lines[j]); ok {
-					fence = f
-				}
-			}
-		} else {
+	// The title line must begin with "# ".
+	// Files without it use the legacy present markup, which is not supported.
+	for i, line := range text {
+		if isBlank(line) {
 			continue
 		}
-		blocks = append(blocks, b)
-		i = b.end
+		if !strings.HasPrefix(line, "# ") {
+			return nil, fmt.Errorf("%s:%d: title must begin with \"# \" (legacy present markup is not supported; convert it with present convert-legacy)", name, i+1)
+		}
+		break
 	}
-	return blocks
-}
 
-// codeFence returns the fence that line opens a fenced code block with, if
-// it does: at least three backticks or tildes, after at most three spaces,
-// and with no backtick after backticks, as in CommonMark.
-func codeFence(line string) (fence string, ok bool) {
-	rest := strings.TrimLeft(line, " ")
-	if len(line)-len(rest) > 3 || rest == "" || (rest[0] != '`' && rest[0] != '~') {
-		return "", false
-	}
-	info := strings.TrimLeft(rest, rest[:1])
-	fence = rest[:len(rest)-len(info)]
-	if len(fence) < 3 || (fence[0] == '`' && strings.Contains(info, "`")) {
-		return "", false
-	}
-	return fence, true
-}
-
-// closesFence reports whether line closes a fenced code block opened by
-// fence: it has at least as many of the same character, after at most
-// three spaces, and nothing else but spaces.
-func closesFence(line, fence string) bool {
-	rest := strings.TrimLeft(line, " ")
-	if len(line)-len(rest) > 3 || !strings.HasPrefix(rest, fence) {
-		return false
-	}
-	return strings.TrimSpace(strings.TrimLeft(rest, fence[:1])) == ""
-}
-
-// foldBlocks records the block that each line is in, and turns each block
-// of notes in lines into a single speaker note holding the lines of the
-// block, so that the parser takes it like any other note. The note is on
-// the line that starts the block, and the other lines of the block become
-// comments, so that lines keep their numbers. Comments in the block are
-// kept, since the block is folded before comments are skipped. A block
-// that is not closed is an error.
-func foldBlocks(name string, lines *Lines) error {
-	text := lines.text
-	for _, b := range findBlocks(text) {
+	// The header and the authors run up to the first section, after the
+	// blank line that ends the header. Each block of notes in them becomes
+	// a single note, on the line that starts the block, whose other lines
+	// become comments, so that lines keep their numbers.
+	start := len(text)
+	header := slices.Clone(text)
+	title, inHeader := false, true
+	for i := 0; i < len(text); i++ {
+		if IsNotesBlockStart(text[i]) {
+			end := notesBlockEnd(text, i)
+			if end < 0 {
+				return nil, fmt.Errorf("%s:%d: notes block is not closed by a line with :::", name, i+1)
+			}
+			f.notes = append(f.notes, [2]int{i, end})
+			header[i] = ": " + strings.Join(text[i+1:end], "\n")
+			for j := i + 1; j <= end; j++ {
+				header[j] = "//"
+				f.kinds[j] = NoteLine
+			}
+			i = end
+			continue
+		}
 		switch {
-		case !b.closed && b.kind == CodeBlock:
-			fence, _ := codeFence(text[b.start])
-			return fmt.Errorf("%s:%d: fenced code block is not closed by a line with %s", name, b.start+1, fence)
-		case !b.closed:
-			return fmt.Errorf("%s:%d: notes block is not closed by a line with :::", name, b.start+1)
+		case !title:
+			title = !isBlank(text[i])
+		case inHeader:
+			inHeader = !isBlank(text[i])
+		case strings.HasPrefix(text[i], "##"):
+			start = i
 		}
-		for i := b.start; i <= b.end; i++ {
-			lines.blocks[i] = b.kind
-		}
-		if b.kind == NotesBlock {
-			text[b.start] = ": " + strings.Join(text[b.start+1:b.end], "\n")
-			for i := b.start + 1; i <= b.end; i++ {
-				text[i] = lines.comment
-			}
+		if start < len(text) {
+			break
 		}
 	}
-	return nil
-}
-
-func isSpeakerNote(s string) bool {
-	return strings.HasPrefix(s, ": ") || s == ":"
-}
-
-func trimSpeakerNote(s string) string {
-	if s == ":" {
-		return ""
-	}
-	return strings.TrimPrefix(s, ": ")
-}
-
-func renderMarkdown(input []byte) (template.HTML, error) {
-	doc := parser.New(parser.WithExtensions(extension.TableParser)).Parse(input)
-	fixupMarkdown(doc)
-	var b strings.Builder
-	r := html.New(html.WithUnsafe(), html.WithExtensions(extension.NewTableHTMLRenderer()))
-	if err := r.Render(&b, input, doc); err != nil {
-		return "", err
-	}
-	return template.HTML(b.String()), nil
-}
-
-// renderInlineMarkdown renders s, a single line such as a caption or a link
-// label, as Markdown without the enclosing paragraph.
-func renderInlineMarkdown(s string) (template.HTML, error) {
-	html, err := renderMarkdown([]byte(s))
-	if err != nil {
-		return "", err
-	}
-	inner, ok := strings.CutPrefix(string(html), "<p>")
-	if inner, ok2 := strings.CutSuffix(inner, "</p>\n"); ok && ok2 {
-		return template.HTML(inner), nil
-	}
-	return html, nil
-}
-
-func fixupMarkdown(n ast.Node) {
-	ast.Walk(n, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if entering {
-			switch n := n.(type) {
-			case *ast.Link:
-				n.SetAttribute("target", text.NewMultiLineValueFromString("_blank", text.IdentityDecoder))
-				// https://developers.google.com/web/tools/lighthouse/audits/noopener
-				n.SetAttribute("rel", text.NewMultiLineValueFromString("noopener", text.IdentityDecoder))
-			}
+	header = header[:start]
+	for _, line := range header {
+		if isSpeakerNote(line) {
+			f.doc.TitleNotes = append(f.doc.TitleNotes, trimSpeakerNote(line))
 		}
-		return ast.WalkContinue, nil
-	})
+	}
+	lines := &lineReader{text: header, kinds: f.kinds[:start], comment: "//"}
+	if err := parseHeader(f.doc, name, lines); err != nil {
+		return nil, err
+	}
+	if mode&TitlesOnly != 0 {
+		return f, nil
+	}
+	if f.doc.Authors, err = parseAuthors(name, lines); err != nil {
+		return nil, err
+	}
+	if start == len(text) {
+		return nil, fmt.Errorf("%s:%d: unexpected end of file; expected a section, which begins with \"## \"", name, len(text))
+	}
+	if err := f.parseSections(start); err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
+// readText returns the lines of r, without their line endings.
+func readText(r io.Reader) ([]string, error) {
+	var lines []string
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		lines = append(lines, s.Text())
+	}
+	return lines, s.Err()
 }

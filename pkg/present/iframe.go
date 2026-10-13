@@ -25,7 +25,7 @@ func (i Iframe) TemplateName() string { return "iframe" }
 func parseIframe(ctx *Context, fileName string, lineno int, text string) (Elem, error) {
 	args := strings.Fields(text)
 	if len(args) < 2 {
-		return nil, fmt.Errorf("incorrect iframe invocation: %q", text)
+		return nil, fmt.Errorf("%s:%d: incorrect iframe invocation: %q: want a URL, and optionally a height and a width", fileName, lineno, text)
 	}
 	i := Iframe{Cmd: text, URL: args[1]}
 	switch len(args) {
@@ -37,7 +37,7 @@ func parseIframe(ctx *Context, fileName string, lineno int, text string) (Elem, 
 			return nil, fmt.Errorf("%s:%d: incorrect iframe invocation: %q: %v", fileName, lineno, text, err)
 		}
 	default:
-		return nil, fmt.Errorf("incorrect iframe invocation: %q", text)
+		return nil, fmt.Errorf("%s:%d: incorrect iframe invocation: %q: want a URL, and optionally a height and a width", fileName, lineno, text)
 	}
 	return i, nil
 }

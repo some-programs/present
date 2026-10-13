@@ -63,6 +63,10 @@ func init() {
 		commands = append(commands, command{c.name, c.help, c.run})
 	}
 	commands = append(commands, command{"export", "write presentations as static HTML pages", export})
+	commands = append(commands, command{"fmt", "format presentations", func(args []string, stdout, stderr io.Writer) int {
+		return format(args, os.Stdin, stdout, stderr)
+	}})
+	commands = append(commands, command{"lint", "check presentations for problems", lint})
 	commands = append(commands, command{"convert-legacy", "convert presentations from the legacy markup to Markdown", convertLegacy})
 }
 

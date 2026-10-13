@@ -25,11 +25,11 @@ func (l Link) TemplateName() string { return "link" }
 func parseLink(ctx *Context, fileName string, lineno int, text string) (Elem, error) {
 	args := strings.Fields(text)
 	if len(args) < 2 {
-		return nil, fmt.Errorf("link element must have at least 2 arguments")
+		return nil, fmt.Errorf("%s:%d: .link expects a URL", fileName, lineno)
 	}
 	url, err := url.Parse(args[1])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s:%d: %v", fileName, lineno, err)
 	}
 	label := ""
 	if len(args) > 2 {

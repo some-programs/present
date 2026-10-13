@@ -59,14 +59,18 @@ func TestSlideSources(t *testing.T) {
 }
 
 func TestCommandFiles(t *testing.T) {
-	files := commandFiles([]string{
+	var lines []present.Line
+	for _, line := range []string{
 		".code -edit -numbers code/fib/main.go /^func main/",
 		".play code/fib/main.go",
 		".image -background-color transparent diagrams/run.mmd 0.5",
 		".iframe https://go.dev/ 300 400",
 		".link https://go.dev/ Go",
-		"\\.code not/a/command.go",
-	}, "examples/code.slide", "/_examples/code.slide")
+	} {
+		lines = append(lines, present.Line{Text: line, Kind: present.CommandLine})
+	}
+	lines = append(lines, present.Line{Text: "\\.code not/a/command.go", Kind: present.TextLine})
+	files := commandFiles(lines, "examples/code.slide", "/_examples/code.slide")
 	if len(files) != 3 {
 		t.Fatalf("got files %+v, want code/fib/main.go once, the diagram and the iframe", files)
 	}
@@ -128,34 +132,45 @@ func TestRenderDocSource(t *testing.T) {
 	}
 }
 
-func TestSourceNotesBlock(t *testing.T) {
-	s := slideSource{Text: "## One\n\n::: notes\n.code in/notes.go\n:::\n.code code/fib/main.go"}
-	var classes []string
-	for _, l := range s.Lines() {
-		classes = append(classes, l.Class)
-	}
-	want := []string{"src-heading", "", "src-note", "src-note", "src-note", "src-command"}
-	if !slices.Equal(classes, want) {
-		t.Errorf("classes: got %q, want %q", classes, want)
-	}
-	files := commandFiles(strings.Split(s.Text, "\n"), "examples/code.slide", "/_examples/code.slide")
-	if len(files) != 1 || files[0].Name != "code/fib/main.go" {
-		t.Errorf("files: got %+v, want only code/fib/main.go", files)
-	}
-}
-
-func TestSourceCodeBlock(t *testing.T) {
-	s := slideSource{Text: "## One\n\n```\n# shell comment\n.code in/code.go\n```\n.code code/fib/main.go"}
-	var classes []string
-	for _, l := range s.Lines() {
-		classes = append(classes, l.Class)
-	}
-	want := []string{"src-heading", "", "", "", "", "", "src-command"}
-	if !slices.Equal(classes, want) {
-		t.Errorf("classes: got %q, want %q", classes, want)
-	}
-	files := commandFiles(strings.Split(s.Text, "\n"), "examples/code.slide", "/_examples/code.slide")
-	if len(files) != 1 || files[0].Name != "code/fib/main.go" {
-		t.Errorf("files: got %+v, want only code/fib/main.go", files)
+// TestSourceBlocks checks that the lines of code blocks, HTML blocks and
+// blocks of notes are not taken for commands or headings.
+func TestSourceBlocks(t *testing.T) {
+	for _, tt := range []struct {
+		slide string
+		want  []string // the class of each line
+	}{
+		{
+			"## One\n\n::: notes\n.code in/notes.go\n:::\n.code code/fib/main.go",
+			[]string{"src-heading", "", "src-note", "src-note", "src-note", "src-command"},
+		},
+		{
+			"## One\n\n```\n# shell comment\n.code in/code.go\n```\n.code code/fib/main.go",
+			[]string{"src-heading", "", "", "", "", "", "src-command"},
+		},
+		{
+			"## One\n\n<pre>\n# not a heading\n.code in/html.go\n</pre>\n\n.code code/fib/main.go",
+			[]string{"src-heading", "", "", "", "", "", "", "src-command"},
+		},
+	} {
+		src := []byte("# Title\n\n" + tt.slide + "\n")
+		doc, err := present.Parse(bytes.NewReader(src), "examples/code.slide", 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sources, err := slideSources(doc, src, "examples/code.slide", "/_examples/code.slide")
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := sources[1]
+		var classes []string
+		for _, l := range s.Lines() {
+			classes = append(classes, l.Class)
+		}
+		if !slices.Equal(classes, tt.want) {
+			t.Errorf("%q: classes %q, want %q", tt.slide, classes, tt.want)
+		}
+		if len(s.Files) != 1 || s.Files[0].Name != "code/fib/main.go" {
+			t.Errorf("%q: files %+v, want only code/fib/main.go", tt.slide, s.Files)
+		}
 	}
 }

@@ -91,6 +91,18 @@ The convert-legacy command converts presentations in the legacy present markup, 
 	present convert-legacy my-talk.slide         # print my-talk.slide in Markdown
 	present convert-legacy -w *.slide *.article  # convert them all in place
 
+The fmt command formats slide presentations and articles, as gofmt does Go files. It changes only spaces and blank lines, and never how a presentation looks: it removes trailing spaces, but for those in code, and makes the line breaks of trailing spaces backslashes; it keeps a single blank line where there were more; and it sets headings, commands, notes and text apart with one. It prints the result, or with -w, formats each file in place; -l lists the files it would change, and -d prints the changes:
+
+	present fmt -w my-talk.slide                 # format my-talk.slide in place
+	present fmt -l -r .                          # list the files to format, in all directories
+
+The lint command checks slide presentations and articles for problems, such as commands that are not known, or whose files do not exist, notes or headings that are text since a space is missing, and files that fmt would change. It prints each as file:line: message (rule), or as JSON with -json, and exits with status 1 if it finds any:
+
+	present lint my-talk.slide                   # check my-talk.slide
+	present lint -json -r talks                  # check all presentations in talks, as JSON
+
+With -r, a directory stands for the presentations in it and in the directories below it, but for those whose names start with . or \_, for both commands.
+
 Input files are named foo.extension, where "extension" defines the format of the generated output. The supported formats are:
 
 	.slide        // HTML5 slide presentation
@@ -159,11 +171,11 @@ Markdown typically means the generic name for a family of similar markup languag
 
 Section headings can end in {#name} to set the HTML anchor ID for the heading to "name".
 
-Lines beginning with "//" (outside of code blocks, of course) are treated as present comments and have no effect.
+Lines beginning with "//" (outside of code blocks, of course) are treated as present comments and have no effect. They are taken out of the Markdown, so a comment does not end a paragraph or a list.
 
 Lines beginning with ": ", and blocks from a "::: notes" line to a ":::" line, are treated as speaker notes, described below.
 
-The lines of a fenced code block, from a line of three or more backticks or tildes to a line of at least as many of the same, are code, even those that look like commands, notes, comments or headings. A fenced code block must be closed.
+Commands, notes and headings of sections are blocks of their own in the Markdown: they start at the beginning of a line, and end a paragraph, list or quote before them. A line in another block, such as a code block, an HTML block or an indented line in a list item, is part of that block, even one that looks like a command, note, comment or heading. A fenced code block, and an HTML block that ends at a closing tag, such as \<pre>, or at the end of a comment, such as \<!--, must be closed, since it would run to the end of the file otherwise.
 
 Example:
 

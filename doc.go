@@ -78,6 +78,30 @@ the result, or with -w, converts each file in place:
 	present convert-legacy my-talk.slide         # print my-talk.slide in Markdown
 	present convert-legacy -w *.slide *.article  # convert them all in place
 
+The fmt command formats slide presentations and articles, as gofmt does Go
+files. It changes only spaces and blank lines, and never how a presentation
+looks: it removes trailing spaces, but for those in code, and makes the
+line breaks of trailing spaces backslashes; it keeps a single blank line
+where there were more; and it sets headings, commands, notes and text
+apart with one. It prints the result, or with -w, formats each file in
+place; -l lists the files it would change, and -d prints the changes:
+
+	present fmt -w my-talk.slide                 # format my-talk.slide in place
+	present fmt -l -r .                          # list the files to format, in all directories
+
+The lint command checks slide presentations and articles for problems,
+such as commands that are not known, or whose files do not exist, notes
+or headings that are text since a space is missing, and files that fmt
+would change. It prints each as file:line: message (rule), or as JSON
+with -json, and exits with status 1 if it finds any:
+
+	present lint my-talk.slide                   # check my-talk.slide
+	present lint -json -r talks                  # check all presentations in talks, as JSON
+
+With -r, a directory stands for the presentations in it and in the
+directories below it, but for those whose names start with . or _, for
+both commands.
+
 Input files are named foo.extension, where "extension" defines the format of
 the generated output. The supported formats are:
 

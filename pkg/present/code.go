@@ -70,7 +70,7 @@ func parseCode(ctx *Context, sourceFile string, sourceLine int, cmd string) (Ele
 	highlight := ""
 	if hl := highlightRE.FindStringSubmatchIndex(cmd); len(hl) == 4 {
 		if hl[2] < 0 || hl[3] < 0 {
-			return nil, fmt.Errorf("%s:%d invalid highlight syntax", sourceFile, sourceLine)
+			return nil, fmt.Errorf("%s:%d: invalid highlight syntax", sourceFile, sourceLine)
 		}
 		highlight = cmd[hl[2]:hl[3]]
 		cmd = cmd[:hl[2]-2]

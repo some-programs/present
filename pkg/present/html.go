@@ -5,7 +5,7 @@
 package present
 
 import (
-	"errors"
+	"fmt"
 	"html/template"
 	"path/filepath"
 	"strings"
@@ -18,12 +18,12 @@ func init() {
 func parseHTML(ctx *Context, fileName string, lineno int, text string) (Elem, error) {
 	p := strings.Fields(text)
 	if len(p) != 2 {
-		return nil, errors.New("invalid .html args")
+		return nil, fmt.Errorf("%s:%d: .html expects exactly one argument", fileName, lineno)
 	}
 	name := filepath.Join(filepath.Dir(fileName), p[1])
 	b, err := ctx.ReadFile(name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s:%d: %v", fileName, lineno, err)
 	}
 	return HTML{text, template.HTML(b)}, nil
 }

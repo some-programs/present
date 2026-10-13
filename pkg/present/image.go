@@ -82,7 +82,7 @@ func parseImage(_ *Context, fileName string, lineno int, text string) (Elem, err
 		}
 	}
 	if len(args) < 2 {
-		return nil, fmt.Errorf("incorrect image invocation: %q", text)
+		return nil, fmt.Errorf("%s:%d: incorrect image invocation: %q: no file", fileName, lineno, text)
 	}
 	img.URL = args[1]
 	ext := path.Ext(img.URL)

@@ -207,3 +207,11 @@ func main() { // HLfunc
 		}
 	}
 }
+
+// TestAddrTrailingBackslash checks that an address that ends in a
+// backslash in an open pattern is an error, not a panic.
+func TestAddrTrailingBackslash(t *testing.T) {
+	if _, _, err := addrToByteRange(`/\`, 0, []byte("x\n")); err == nil {
+		t.Errorf("addrToByteRange(%q): got no error", `/\`)
+	}
+}

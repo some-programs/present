@@ -87,15 +87,20 @@ See https://commonmark.org/help/tutorial/ for a quick tutorial.
 Section headings can end in {#name} to set the HTML anchor ID for the heading to "name".
 
 Lines beginning with "//" (outside of code blocks, of course)
-are treated as present comments and have no effect.
+are treated as present comments and have no effect. They are taken out of
+the Markdown, so a comment does not end a paragraph or a list.
 
 Lines beginning with ": ", and blocks from a "::: notes" line to a ":::"
 line, are treated as speaker notes, described below.
 
-The lines of a fenced code block, from a line of three or more backticks
-or tildes to a line of at least as many of the same, are code, even those
-that look like commands, notes, comments or headings. A fenced code block
-must be closed.
+Commands, notes and headings of sections are blocks of their own in the
+Markdown: they start at the beginning of a line, and end a paragraph, list
+or quote before them. A line in another block, such as a code block, an
+HTML block or an indented line in a list item, is part of that block, even
+one that looks like a command, note, comment or heading. A fenced code
+block, and an HTML block that ends at a closing tag, such as <pre>, or at
+the end of a comment, such as <!--, must be closed, since it would run to
+the end of the file otherwise.
 
 Example:
 

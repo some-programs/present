@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"net/url"
 	"os"
@@ -31,6 +30,8 @@ type slideSource struct {
 	Number int          // the number of the slide, from 1
 	Text   string       // the lines of the slide in the presentation file
 	Files  []sourceFile // the files that the slide's commands use
+
+	lines []present.Line // the lines of Text
 }
 
 // A sourceLine is a line of a slideSource, with the class that marks what
@@ -42,24 +43,19 @@ type sourceLine struct {
 // Lines returns the lines of s.Text.
 func (s slideSource) Lines() []sourceLine {
 	var lines []sourceLine
-	text := strings.Split(s.Text, "\n")
-	blocks := present.Blocks(text)
-	for i, line := range text {
+	for _, l := range s.lines {
 		var class string
-		switch {
-		case blocks[i] == present.NotesBlock:
-			class = "src-note"
-		case blocks[i] == present.CodeBlock:
-		case strings.HasPrefix(line, "#"):
+		switch l.Kind {
+		case present.TitleLine, present.HeadingLine:
 			class = "src-heading"
-		case strings.HasPrefix(line, "."):
+		case present.CommandLine:
 			class = "src-command"
-		case strings.HasPrefix(line, ": "):
+		case present.NoteLine:
 			class = "src-note"
-		case strings.HasPrefix(line, "//"):
+		case present.CommentLine:
 			class = "src-comment"
 		}
-		lines = append(lines, sourceLine{line, class})
+		lines = append(lines, sourceLine{l.Text, class})
 	}
 	return lines
 }
@@ -76,12 +72,8 @@ type sourceFile struct {
 // the title slide, made from the header and authors, then one for each
 // section.
 func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slideSource, error) {
-	var lines []string
-	s := bufio.NewScanner(bytes.NewReader(src))
-	for s.Scan() {
-		lines = append(lines, s.Text())
-	}
-	if err := s.Err(); err != nil {
+	lines, err := present.ScanLines(bytes.NewReader(src), docFile)
+	if err != nil {
 		return nil, err
 	}
 
@@ -97,29 +89,32 @@ func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slid
 			end = starts[i+1]
 		}
 		slide := lines[start:end]
-		for len(slide) > 0 && strings.TrimSpace(slide[len(slide)-1]) == "" {
+		for len(slide) > 0 && strings.TrimSpace(slide[len(slide)-1].Text) == "" {
 			slide = slide[:len(slide)-1]
+		}
+		var text []string
+		for _, l := range slide {
+			text = append(text, l.Text)
 		}
 		sources = append(sources, slideSource{
 			Number: i + 1,
-			Text:   strings.Join(slide, "\n"),
+			Text:   strings.Join(text, "\n"),
 			Files:  commandFiles(slide, docFile, urlPath),
+			lines:  slide,
 		})
 	}
 	return sources, nil
 }
 
-// commandFiles returns the files that the commands in lines use. The
+// commandFiles returns the files that the commands among lines use. The
 // contents of programs, included HTML and diagram sources are included.
-func commandFiles(lines []string, docFile, urlPath string) []sourceFile {
+func commandFiles(lines []present.Line, docFile, urlPath string) []sourceFile {
 	var files []sourceFile
-	blocks := present.Blocks(lines)
-	for i, line := range lines {
-		// Lines in a code block or a block of notes are Markdown, not
-		// commands.
-		if blocks[i] != present.NoBlock || !strings.HasPrefix(line, ".") {
+	for _, l := range lines {
+		if l.Kind != present.CommandLine {
 			continue
 		}
+		line := l.Text
 		args := strings.Fields(line)
 		var name string
 		if len(args) > 1 {

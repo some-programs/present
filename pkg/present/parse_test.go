@@ -287,8 +287,18 @@ func TestFencedCode(t *testing.T) {
 		{"# Title\n\n## One\n\n```go\ncode\n## Two\n", "x.slide:5: fenced code block is not closed by a line with ```"},
 		{"# Title\n\n## One\n\n::: notes\n```\n:::\n", "x.slide:5: notes block is not closed by a line with :::"},
 		{"# Title\n\n## One\n\nText.\n\n# Two\n\n## Three\n", `x.slide:7: unexpected heading "# Two": only the title begins with "# ", and sections with "## "`},
+		{"# Title\n\n## One\n\n<pre>\ncode\n\n## Two\n", "x.slide:5: HTML block is not closed by a line with </pre>"},
+		{"# Title\n\n## One\n\n<!-- comment\n\n## Two\n", "x.slide:5: HTML block is not closed by a line with -->"},
+		{"# Title\n\n## One\n\n- item\n\n  ```\n  code\n\n## Two\n", ""},
 	} {
 		_, err := Parse(strings.NewReader(tt.input), "x.slide", 0)
+		if tt.want == "" {
+			// A code block in a list ends with the list.
+			if err != nil {
+				t.Errorf("Parse(%q): %v", tt.input, err)
+			}
+			continue
+		}
 		if err == nil || err.Error() != tt.want {
 			t.Errorf("Parse(%q): got error %v, want %s", tt.input, err, tt.want)
 		}
@@ -325,5 +335,31 @@ func TestCodeFence(t *testing.T) {
 		if got := closesFence(tt.line, tt.fence); got != tt.want {
 			t.Errorf("closesFence(%q, %q) = %v, want %v", tt.line, tt.fence, got, tt.want)
 		}
+	}
+}
+
+// TestAuthors checks that authors are separated by blank lines, however
+// many, also lines of spaces.
+func TestAuthors(t *testing.T) {
+	const input = "# Title\n\nAda\nada@example.com  \n\n\n\nBob\n   \nCy\n\n\n## Slide\n"
+	doc, err := Parse(strings.NewReader(input), "x.slide", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, a := range doc.Authors {
+		var lines []string
+		for _, e := range a.Elem {
+			switch e := e.(type) {
+			case Text:
+				lines = append(lines, e.Lines...)
+			case Link:
+				lines = append(lines, e.Label)
+			}
+		}
+		got = append(got, strings.Join(lines, "|"))
+	}
+	if want := []string{"Ada|ada@example.com", "Bob", "Cy"}; !slices.Equal(got, want) {
+		t.Errorf("authors: got %q, want %q", got, want)
 	}
 }

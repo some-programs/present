@@ -26,7 +26,7 @@ func (v Video) TemplateName() string { return "video" }
 func parseVideo(ctx *Context, fileName string, lineno int, text string) (Elem, error) {
 	args := strings.Fields(text)
 	if len(args) < 3 {
-		return nil, fmt.Errorf("incorrect video invocation: %q", text)
+		return nil, fmt.Errorf("%s:%d: incorrect video invocation: %q: want a file, a content type, and optionally a height and a width", fileName, lineno, text)
 	}
 	vid := Video{Cmd: text, URL: args[1], SourceType: args[2]}
 	switch len(args) {
@@ -38,7 +38,7 @@ func parseVideo(ctx *Context, fileName string, lineno int, text string) (Elem, e
 			return nil, fmt.Errorf("%s:%d: incorrect video invocation: %q: %v", fileName, lineno, text, err)
 		}
 	default:
-		return nil, fmt.Errorf("incorrect video invocation: %q", text)
+		return nil, fmt.Errorf("%s:%d: incorrect video invocation: %q: want a file, a content type, and optionally a height and a width", fileName, lineno, text)
 	}
 	return vid, nil
 }

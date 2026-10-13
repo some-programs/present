@@ -3,6 +3,7 @@ module github.com/some-programs/present
 go 1.27.2
 
 require (
+	github.com/aymanbagabas/go-udiff v0.4.1
 	github.com/benbjohnson/hashfs v0.2.2
 	github.com/klauspost/compress v1.20.1
 	github.com/yuin/goldmark/v2 v2.1.6

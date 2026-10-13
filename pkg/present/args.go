@@ -92,6 +92,8 @@ func addrToByteRange(addr string, start int, data []byte) (lo, hi int, err error
 					break Regexp
 				}
 			}
+			// A backslash at the end of an open pattern escapes nothing.
+			i = min(i, len(addr))
 			if j == 0 {
 				j = i
 			}
