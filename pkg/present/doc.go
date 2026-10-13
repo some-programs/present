@@ -427,8 +427,8 @@ in it as it serves it; the file itself is unchanged. This holds for every
 SVG file that present serves, also images and backgrounds that are not
 diagrams. Both tools size labels with the fonts installed where present
 runs, though, so install Roboto and JetBrains Mono there for the labels to
-fit. Present serve -doc serves both as TrueType files, with their
-licenses, at /download/fonts.tar.
+fit. Present serve -doc serves both as TrueType files at
+/download/fonts.tar.
 
 # Presenter Notes
 

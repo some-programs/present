@@ -50,13 +50,10 @@ func TestFontsTar(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"fonts/",
-		"fonts/OFL-Roboto.txt",
-		"fonts/OFL-JetBrainsMono.txt",
-		"fonts/Roboto/",
-		"fonts/Roboto/Roboto-Regular.ttf",
-		"fonts/JetBrainsMono/",
-		"fonts/JetBrainsMono/JetBrainsMono-Regular.ttf",
+		"Roboto/",
+		"Roboto/Roboto-Regular.ttf",
+		"JetBrainsMono/",
+		"JetBrainsMono/JetBrainsMono-Regular.ttf",
 	} {
 		if !slices.Contains(names, want) {
 			t.Errorf("archive lacks %s", want)
@@ -66,8 +63,8 @@ func TestFontsTar(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The directories are fonts/ and one for each family.
-	if got, want := len(names), len(fontLicenses)+len(ttfs)+3; got != want {
+	// The directories are one for each family.
+	if got, want := len(names), len(ttfs)+2; got != want {
 		t.Errorf("archive has %d entries, want %d: %q", got, want, names)
 	}
 }

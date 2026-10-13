@@ -427,7 +427,7 @@ A Mermaid flowchart can use both fonts, with a class for each, as the flowcharts
 
 Other types of Mermaid diagrams use one font: a state diagram cannot escape the comma of a class, so a font in it has no fallback, and the classes of a class diagram and the participants of a sequence diagram cannot set one.
 
-The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. Present serve -doc serves both as TrueType files, with their licenses, at /download/fonts.tar.
+The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. Present serve -doc serves both as TrueType files at /download/fonts.tar.
 
 ### Presenter Notes
 
