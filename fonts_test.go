@@ -169,7 +169,7 @@ func TestServeSVG(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	if !serveSVG(w, httptest.NewRequest("GET", "/g.svg", nil), name) {
+	if !serveSVG(w, httptest.NewRequest("GET", "/g.svg", nil), os.DirFS(dir), "g.svg") {
 		t.Fatal("serveSVG reported that it did not serve g.svg")
 	}
 	if got, want := w.Header().Get("Content-Type"), "image/svg+xml"; got != want {
@@ -179,9 +179,9 @@ func TestServeSVG(t *testing.T) {
 		t.Errorf("body does not start with an embedded Roboto: %.200s", got)
 	}
 
-	for _, name := range []string{filepath.Join(dir, "missing.svg"), dir} {
+	for _, name := range []string{"missing.svg", "."} {
 		w := httptest.NewRecorder()
-		if serveSVG(w, httptest.NewRequest("GET", "/x.svg", nil), name) || w.Body.Len() > 0 {
+		if serveSVG(w, httptest.NewRequest("GET", "/x.svg", nil), os.DirFS(dir), name) || w.Body.Len() > 0 {
 			t.Errorf("serveSVG of %s served it", name)
 		}
 	}

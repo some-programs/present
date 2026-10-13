@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"path/filepath"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -53,7 +53,7 @@ Nothing to say.
 `,
 	})
 	var buf bytes.Buffer
-	if err := renderNotes(&buf, filepath.Join(dir, "x.slide")); err != nil {
+	if err := renderNotes(&buf, os.DirFS(dir), "x.slide"); err != nil {
 		t.Fatal(err)
 	}
 

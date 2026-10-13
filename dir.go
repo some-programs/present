@@ -13,7 +13,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -27,17 +26,17 @@ func init() {
 }
 
 // dirHandler serves a directory listing for the requested path, rooted at
-// *contentPath, or at examplesDir for the examples with -doc.
+// *contentPath, or at the examples with -doc.
 func dirHandler(w http.ResponseWriter, r *http.Request) {
-	name := contentFile(r.URL.Path)
+	root, name := contentFile(r.URL.Path)
 	if isDoc(name) {
-		render := func(w io.Writer) error { return renderDoc(w, name, r.URL.Path) }
+		render := func(w io.Writer) error { return renderDoc(w, root, name, r.URL.Path) }
 		if r.URL.Query().Has("notes") {
-			if !present.NotesEnabled || filepath.Ext(name) != ".slide" {
+			if !present.NotesEnabled || path.Ext(name) != ".slide" {
 				http.NotFound(w, r)
 				return
 			}
-			render = func(w io.Writer) error { return renderNotes(w, name) }
+			render = func(w io.Writer) error { return renderNotes(w, root.fsys, name) }
 		}
 		var buf bytes.Buffer
 		if err := render(&buf); err != nil {
@@ -47,7 +46,7 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(buf.Bytes())
 		return
 	}
-	if isDir, err := dirList(w, name, r.URL.Path); err != nil {
+	if isDir, err := dirList(w, root.fsys, name, r.URL.Path); err != nil {
 		serveError(w, r, name, err)
 		return
 	} else if isDir {
@@ -56,17 +55,16 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	// Have browsers check for a newer file on every load, such as an
 	// image that has been replaced while the slides are open.
 	w.Header().Set("Cache-Control", "no-cache")
-	if filepath.Ext(name) == ".svg" && serveSVG(w, r, name) {
+	if path.Ext(name) == ".svg" && serveSVG(w, r, root.fsys, name) {
 		return
 	}
-	prefix, dir := contentRoot(r.URL.Path)
-	http.StripPrefix(prefix, http.FileServer(http.Dir(dir))).ServeHTTP(w, r)
+	http.StripPrefix(root.prefix, http.FileServerFS(root.fsys)).ServeHTTP(w, r)
 }
 
 // serveError logs err and replies with an error for the request for name.
 // If name itself does not exist, the reply is a plain 404. Otherwise the
 // error text is sent so that authors see mistakes such as an unknown
-// command, with the content directories removed from any paths in it.
+// command.
 func serveError(w http.ResponseWriter, r *http.Request, name string, err error) {
 	addr, _, e := net.SplitHostPort(r.RemoteAddr)
 	if e != nil {
@@ -78,7 +76,7 @@ func serveError(w http.ResponseWriter, r *http.Request, name string, err error) 
 		http.NotFound(w, r)
 		return
 	}
-	http.Error(w, trimContentDirs(err.Error()), http.StatusInternalServerError)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
 func isDoc(path string) bool {
@@ -150,25 +148,25 @@ type pageData struct {
 	Sources    []slideSource // the source of each slide, with -doc or export -source
 }
 
-// renderDoc reads the present file docFile, served at the URL path
+// renderDoc reads the present file docFile in root, served at the URL path
 // urlPath, gets its template representation, and executes the template,
 // sending output to w.
-func renderDoc(w io.Writer, docFile, urlPath string) error {
+func renderDoc(w io.Writer, root contentRoot, docFile, urlPath string) error {
 	// Read the input and build the doc structure.
-	src, err := os.ReadFile(docFile)
+	src, err := fs.ReadFile(root.fsys, docFile)
 	if err != nil {
 		return err
 	}
-	doc, err := present.Parse(bytes.NewReader(src), docFile, 0)
+	doc, err := parse(root.fsys, bytes.NewReader(src), docFile, 0)
 	if err != nil {
 		return err
 	}
-	renderDiagrams(doc, docFile)
+	renderDiagrams(doc, root, docFile)
 
 	data := newPageData(doc, docFile)
-	if *showDoc && filepath.Ext(docFile) == ".slide" {
+	if *showDoc && path.Ext(docFile) == ".slide" {
 		data.SourceFile = sourceFileName(urlPath)
-		data.Sources, err = slideSources(doc, src, docFile, urlPath)
+		data.Sources, err = slideSources(doc, src, root.fsys, docFile, urlPath)
 		if err != nil {
 			return err
 		}
@@ -183,7 +181,7 @@ func renderDoc(w io.Writer, docFile, urlPath string) error {
 func newPageData(doc *present.Doc, docFile string) pageData {
 	return pageData{
 		Doc:            doc,
-		Template:       contentTemplate[filepath.Ext(docFile)],
+		Template:       contentTemplate[path.Ext(docFile)],
 		PlayEnabled:    present.PlayEnabled,
 		NotesEnabled:   present.NotesEnabled,
 		PreloadEnabled: present.PreloadEnabled,
@@ -191,10 +189,10 @@ func newPageData(doc *present.Doc, docFile string) pageData {
 }
 
 // renderNotes renders the presenter notes window of the slide
-// presentation docFile, with the notes of every slide. The presentation's
-// own window shows itself in it.
-func renderNotes(w io.Writer, docFile string) error {
-	doc, err := parse(docFile, 0)
+// presentation docFile in fsys, with the notes of every slide. The
+// presentation's own window shows itself in it.
+func renderNotes(w io.Writer, fsys fs.FS, docFile string) error {
+	doc, err := parseFile(fsys, docFile, 0)
 	if err != nil {
 		return err
 	}
@@ -213,23 +211,14 @@ func sectionNotes(s present.Section) []string {
 	return notes
 }
 
-func parse(name string, mode present.ParseMode) (*present.Doc, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return present.Parse(f, name, mode)
-}
-
-// dirList scans the given path, served at the URL path urlPath, and writes
-// a directory listing to w.
+// dirList scans the given path in fsys, served at the URL path urlPath,
+// and writes a directory listing to w.
 // It parses the first part of each .slide file it encounters to display the
 // presentation title in the listing.
 // If the given path is not a directory, it returns (isDir == false, err == nil)
 // and writes nothing to w.
-func dirList(w io.Writer, name, urlPath string) (isDir bool, err error) {
-	fi, err := os.Stat(name)
+func dirList(w io.Writer, fsys fs.FS, name, urlPath string) (isDir bool, err error) {
+	fi, err := fs.Stat(fsys, name)
 	if err != nil {
 		return false, err
 	}
@@ -237,7 +226,7 @@ func dirList(w io.Writer, name, urlPath string) (isDir bool, err error) {
 		return false, nil
 	}
 	// The entries are sorted by name, and so is each list built from them.
-	entries, err := os.ReadDir(name)
+	entries, err := fs.ReadDir(fsys, name)
 	if err != nil {
 		return false, err
 	}
@@ -246,20 +235,20 @@ func dirList(w io.Writer, name, urlPath string) (isDir bool, err error) {
 	for _, de := range entries {
 		e := dirEntry{
 			Name: de.Name(),
-			Path: filepath.ToSlash(filepath.Join(strippedPath, de.Name())),
+			Path: path.Join(strippedPath, de.Name()),
 		}
 		if de.IsDir() && showDir(e.Name) {
 			d.Dirs = append(d.Dirs, e)
 			continue
 		}
 		if isDoc(e.Name) {
-			fn := filepath.ToSlash(filepath.Join(name, de.Name()))
-			if p, err := parse(fn, present.TitlesOnly); err != nil {
-				log.Printf("parse(%q, present.TitlesOnly): %v", fn, err)
+			fn := path.Join(name, de.Name())
+			if p, err := parseFile(fsys, fn, present.TitlesOnly); err != nil {
+				log.Printf("parseFile(%q, present.TitlesOnly): %v", fn, err)
 			} else {
 				e.Title = p.Title
 			}
-			switch filepath.Ext(e.Path) {
+			switch path.Ext(e.Path) {
 			case ".article":
 				d.Articles = append(d.Articles, e)
 			case ".slide":

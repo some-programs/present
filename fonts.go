@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"path"
 	"regexp"
 	"slices"
@@ -221,11 +220,11 @@ func embedSVGFonts(svg []byte, faces []fontFace) []byte {
 // svgFontFaces are the faces that serveSVG embeds in SVG files.
 var svgFontFaces []fontFace
 
-// serveSVG serves the SVG file name with the fonts it uses embedded, as
-// embedSVGFonts does. It reports false, having written nothing, if name
-// cannot be read as a file.
-func serveSVG(w http.ResponseWriter, r *http.Request, name string) bool {
-	f, err := os.Open(name)
+// serveSVG serves the SVG file name in fsys with the fonts it uses
+// embedded, as embedSVGFonts does. It reports false, having written
+// nothing, if name cannot be read as a file.
+func serveSVG(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) bool {
+	f, err := fsys.Open(name)
 	if err != nil {
 		return false
 	}

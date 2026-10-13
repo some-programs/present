@@ -16,14 +16,10 @@ var showDoc = serveFlags.Bool("doc", false, "serve the present documentation (RE
 var readmeSrc []byte
 
 // initDoc registers the handlers that serve README.md as HTML and the
-// fonts archive, and writes out the examples for dirHandler to serve, if
-// -doc is set.
+// fonts archive, if -doc is set. dirHandler serves the examples.
 func initDoc(fsys fs.FS, staticURL func(path string) string) error {
 	if !*showDoc {
 		return nil
-	}
-	if err := initExamples(); err != nil {
-		return err
 	}
 	body, err := readme.Render(readmeSrc, examplesPath)
 	if err != nil {

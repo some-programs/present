@@ -71,6 +71,7 @@ func export(args []string, stdout, stderr io.Writer) int {
 // An exporter writes presentations, read from the current directory, to
 // out.
 type exporter struct {
+	files  contentRoot // the current directory
 	out    string
 	source bool // include the sources of slides, as -doc does for serve
 	stdout io.Writer
@@ -96,7 +97,7 @@ func exportDocs(out string, files []string, source bool, stdout io.Writer) error
 		}
 	}
 
-	e := &exporter{out: out, source: source, stdout: stdout, copied: make(map[string]bool)}
+	e := &exporter{files: dirRoot("."), out: out, source: source, stdout: stdout, copied: make(map[string]bool)}
 	staticURL := func(p string) string { return e.root + strings.TrimPrefix(p, "/") }
 	if err := initTemplates(embedFS, staticURL); err != nil {
 		return err
@@ -153,16 +154,15 @@ func pageName(name string) string {
 // the current directory, to its page in e.out, along with the files it
 // shows.
 func (e *exporter) exportDoc(rel string) error {
-	docFile := filepath.FromSlash(rel)
-	src, err := os.ReadFile(docFile)
+	src, err := fs.ReadFile(e.files.fsys, rel)
 	if err != nil {
 		return err
 	}
-	doc, err := present.Parse(bytes.NewReader(src), docFile, 0)
+	doc, err := parse(e.files.fsys, bytes.NewReader(src), rel, 0)
 	if err != nil {
 		return err
 	}
-	renderDiagrams(doc, docFile)
+	renderDiagrams(doc, e.files, rel)
 	failed := false
 	eachDiagram(doc, func(img *present.Image) { failed = failed || img.Error != "" })
 	if failed {
@@ -175,11 +175,11 @@ func (e *exporter) exportDoc(rel string) error {
 
 	page := pageName(rel)
 	e.root = strings.Repeat("../", strings.Count(page, "/"))
-	data := newPageData(doc, docFile)
+	data := newPageData(doc, rel)
 	data.InlineFonts = true
 	if e.source && path.Ext(rel) == ".slide" {
 		data.SourceFile = rel
-		data.Sources, err = slideSources(doc, src, docFile, "/"+rel)
+		data.Sources, err = slideSources(doc, src, e.files.fsys, rel, "/"+rel)
 		if err != nil {
 			return err
 		}
@@ -263,26 +263,25 @@ func (e *exporter) copyFile(name string) error {
 	if e.copied[name] {
 		return nil
 	}
-	src := filepath.FromSlash(name)
 	dst := filepath.Join(e.out, filepath.FromSlash(name))
-	fi, err := os.Stat(src)
+	fi, err := fs.Stat(e.files.fsys, name)
 	if err != nil {
 		return err
 	}
 	if !fi.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a file", src)
+		return fmt.Errorf("%s is not a file", name)
 	}
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
-	if filepath.Ext(name) == ".svg" {
-		svg, err := os.ReadFile(src)
+	if path.Ext(name) == ".svg" {
+		svg, err := fs.ReadFile(e.files.fsys, name)
 		if err != nil {
 			return err
 		}
 		err = writeFile(dst, embedSVGFonts(svg, e.faces))
 	} else {
-		err = copyFileData(dst, src)
+		err = copyFileData(dst, e.files.fsys, name)
 	}
 	if err != nil {
 		return err
@@ -291,10 +290,10 @@ func (e *exporter) copyFile(name string) error {
 	return nil
 }
 
-// copyFileData copies the contents of the file src to the file dst,
-// without reading it all into memory, since it may be a large video.
-func copyFileData(dst, src string) error {
-	r, err := os.Open(src)
+// copyFileData copies the contents of the file src in fsys to the file
+// dst, without reading it all into memory, since it may be a large video.
+func copyFileData(dst string, fsys fs.FS, src string) error {
+	r, err := fsys.Open(src)
 	if err != nil {
 		return err
 	}

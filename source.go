@@ -2,10 +2,9 @@ package main
 
 import (
 	"bytes"
+	"io/fs"
 	"net/url"
-	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -17,7 +16,7 @@ import (
 // directory, or in the examples directory of the repository.
 func sourceFileName(urlPath string) string {
 	urlPath = path.Clean("/" + urlPath)
-	if prefix, _ := contentRoot(urlPath); prefix == examplesPath {
+	if root, _ := contentFile(urlPath); root.prefix == examplesPath {
 		return "examples" + strings.TrimPrefix(urlPath, examplesPath)
 	}
 	return strings.TrimPrefix(urlPath, "/")
@@ -80,10 +79,10 @@ func (f sourceFile) Lines() []sourceLine {
 }
 
 // slideSources returns the sources of the slides of doc, parsed from src,
-// the contents of docFile, which is served at the URL path urlPath: first
-// the title slide, made from the header and authors, then one for each
-// section.
-func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slideSource, error) {
+// the contents of docFile in fsys, which is served at the URL path urlPath:
+// first the title slide, made from the header and authors, then one for
+// each section.
+func slideSources(doc *present.Doc, src []byte, fsys fs.FS, docFile, urlPath string) ([]slideSource, error) {
 	lines, err := present.ScanLines(bytes.NewReader(src), docFile)
 	if err != nil {
 		return nil, err
@@ -111,7 +110,7 @@ func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slid
 		sources = append(sources, slideSource{
 			Number: i + 1,
 			Text:   strings.Join(text, "\n"),
-			Files:  commandFiles(slide, docFile, urlPath),
+			Files:  commandFiles(slide, fsys, docFile, urlPath),
 			lines:  slide,
 			first:  start + 1,
 		})
@@ -119,9 +118,10 @@ func slideSources(doc *present.Doc, src []byte, docFile, urlPath string) ([]slid
 	return sources, nil
 }
 
-// commandFiles returns the files that the commands among lines use. The
-// contents of programs, included HTML and diagram sources are included.
-func commandFiles(lines []present.Line, docFile, urlPath string) []sourceFile {
+// commandFiles returns the files that the commands among lines, of docFile
+// in fsys, use. The contents of programs, included HTML and diagram sources
+// are included.
+func commandFiles(lines []present.Line, fsys fs.FS, docFile, urlPath string) []sourceFile {
 	var files []sourceFile
 	for _, l := range lines {
 		if l.Kind != present.CommandLine {
@@ -173,7 +173,7 @@ func commandFiles(lines []present.Line, docFile, urlPath string) []sourceFile {
 			f.URL = path.Join(path.Dir(urlPath), name)
 		}
 		if text {
-			if data, err := os.ReadFile(filepath.Join(filepath.Dir(docFile), filepath.FromSlash(name))); err == nil {
+			if data, err := fs.ReadFile(fsys, path.Join(path.Dir(docFile), name)); err == nil {
 				f.Text = string(data)
 			}
 		}

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"os"
+	"io/fs"
 	"slices"
 	"strings"
 	"testing"
@@ -11,15 +11,15 @@ import (
 )
 
 func TestSlideSources(t *testing.T) {
-	src, err := os.ReadFile("examples/media.slide")
+	src, err := fs.ReadFile(examplesRoot.fsys, "media.slide")
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc, err := present.Parse(bytes.NewReader(src), "examples/media.slide", 0)
+	doc, err := parse(examplesRoot.fsys, bytes.NewReader(src), "media.slide", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sources, err := slideSources(doc, src, "examples/media.slide", "/_examples/media.slide")
+	sources, err := slideSources(doc, src, examplesRoot.fsys, "media.slide", "/_examples/media.slide")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestCommandFiles(t *testing.T) {
 		lines = append(lines, present.Line{Text: line, Kind: present.CommandLine})
 	}
 	lines = append(lines, present.Line{Text: "\\.code not/a/command.go", Kind: present.TextLine})
-	files := commandFiles(lines, "examples/code.slide", "/_examples/code.slide")
+	files := commandFiles(lines, examplesRoot.fsys, "code.slide", "/_examples/code.slide")
 	if len(files) != 3 {
 		t.Fatalf("got files %+v, want code/fib/main.go once, the diagram and the iframe", files)
 	}
@@ -116,7 +116,7 @@ func TestRenderDocSource(t *testing.T) {
 	for _, doc := range []bool{false, true} {
 		*showDoc = doc
 		var buf bytes.Buffer
-		if err := renderDoc(&buf, "examples/intro.slide", "/_examples/intro.slide"); err != nil {
+		if err := renderDoc(&buf, examplesRoot, "intro.slide", "/_examples/intro.slide"); err != nil {
 			t.Fatal(err)
 		}
 		page := buf.String()
@@ -162,11 +162,11 @@ func TestSourceBlocks(t *testing.T) {
 		},
 	} {
 		src := []byte("# Title\n\n" + tt.slide + "\n")
-		doc, err := present.Parse(bytes.NewReader(src), "examples/code.slide", 0)
+		doc, err := parse(examplesRoot.fsys, bytes.NewReader(src), "code.slide", 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		sources, err := slideSources(doc, src, "examples/code.slide", "/_examples/code.slide")
+		sources, err := slideSources(doc, src, examplesRoot.fsys, "code.slide", "/_examples/code.slide")
 		if err != nil {
 			t.Fatal(err)
 		}

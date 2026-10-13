@@ -5,9 +5,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -68,13 +70,13 @@ var diagramTools = map[string]*diagramTool{
 // request a presentation at the same time.
 var diagramMu sync.Mutex
 
-// renderDiagrams renders the diagram images of doc, read from docFile, to
-// SVG files next to their sources. It records any failure in the image, to
-// be shown with the slide.
-func renderDiagrams(doc *present.Doc, docFile string) {
-	dir := filepath.Dir(docFile)
+// renderDiagrams renders the diagram images of doc, read from docFile in
+// root, to SVG files next to their sources. It records any failure in the
+// image, to be shown with the slide.
+func renderDiagrams(doc *present.Doc, root contentRoot, docFile string) {
+	dir := path.Dir(docFile)
 	paths := func(img *present.Image) (src, out string) {
-		return filepath.Join(dir, filepath.FromSlash(img.Source)), filepath.Join(dir, filepath.FromSlash(img.URL))
+		return path.Join(dir, img.Source), path.Join(dir, img.URL)
 	}
 
 	// Different renderings to the same SVG file, such as of g.dot and
@@ -96,14 +98,14 @@ func renderDiagrams(doc *present.Doc, docFile string) {
 		if rs := renderings[out]; len(rs) > 1 {
 			err := fmt.Errorf("%s: all render to %s", strings.Join(rs, ", "), out)
 			log.Print(err)
-			img.Error = trimContentDirs(err.Error())
+			img.Error = err.Error()
 			img.Missing = true
 			return
 		}
-		svg, err := renderDiagram(src, out, img.BackgroundColor)
+		svg, err := renderDiagram(root, src, out, img.BackgroundColor)
 		if err != nil {
 			log.Print(err)
-			img.Error = trimContentDirs(err.Error())
+			img.Error = err.Error()
 		}
 		img.Missing = svg == nil
 		if svg != nil {
@@ -136,31 +138,35 @@ func eachSectionDiagram(elems []present.Elem, f func(*present.Image)) {
 	}
 }
 
-// renderDiagram renders the diagram file src to the SVG file out, with the
-// tool for its extension and the background color bg, if not empty, unless
-// out already holds the same rendering of the same source. The rendering
-// ends with a comment holding bg and a hash of the source, which is how it
-// is recognized; out is left alone if rendering fails. It returns the
-// contents of out, if any, even with an error.
-func renderDiagram(src, out, bg string) (svg []byte, err error) {
+// renderDiagram renders the diagram file src in root to the SVG file out,
+// with the tool for its extension and the background color bg, if not
+// empty, unless out already holds the same rendering of the same source.
+// The rendering ends with a comment holding bg and a hash of the source,
+// which is how it is recognized; out is left alone if rendering fails. It
+// returns the contents of out, if any, even with an error. Diagrams in a
+// read-only root are not rendered, and their SVG files are used as they
+// are.
+func renderDiagram(root contentRoot, src, out, bg string) (svg []byte, err error) {
 	diagramMu.Lock()
 	defer diagramMu.Unlock()
 
-	old, _ := os.ReadFile(out)
-	tool := diagramTools[filepath.Ext(src)]
+	old, _ := fs.ReadFile(root.fsys, out)
+	tool := diagramTools[path.Ext(src)]
 	if tool == nil {
-		return old, fmt.Errorf("%s: no tool renders %s files", src, filepath.Ext(src))
+		return old, fmt.Errorf("%s: no tool renders %s files", src, path.Ext(src))
 	}
-	source, err := os.ReadFile(src)
+	source, err := fs.ReadFile(root.fsys, src)
 	if err != nil {
 		return old, err
 	}
-	var opts string
-	if bg != "" {
-		opts = " background-color=" + bg
-	}
-	stamp := fmt.Appendf(nil, "<!-- present: %s%s sha256:%x -->\n", tool.name, opts, sha256.Sum256(source))
+	stamp := diagramStamp(tool, bg, source)
 	if bytes.Contains(old, stamp) {
+		return old, nil
+	}
+	if root.dir == "" {
+		if old == nil {
+			return nil, fmt.Errorf("%s: no rendering, and diagrams in read-only content are not rendered", src)
+		}
 		return old, nil
 	}
 	if off := offFlag(tool); off != "" {
@@ -172,8 +178,8 @@ func renderDiagram(src, out, bg string) (svg []byte, err error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, *tool.cmd, tool.args(filepath.Base(src), bg)...)
-	cmd.Dir = filepath.Dir(src)
+	cmd := exec.CommandContext(ctx, *tool.cmd, tool.args(path.Base(src), bg)...)
+	cmd.Dir = filepath.Join(root.dir, filepath.FromSlash(path.Dir(src)))
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	svg, err = cmd.Output()
@@ -184,10 +190,20 @@ func renderDiagram(src, out, bg string) (svg []byte, err error) {
 		return old, fmt.Errorf("%s: %v", src, err)
 	}
 	svg = append(svg, stamp...)
-	if err := writeFile(out, svg); err != nil {
+	if err := writeFile(filepath.Join(root.dir, filepath.FromSlash(out)), svg); err != nil {
 		return old, err
 	}
 	return svg, nil
+}
+
+// diagramStamp returns the comment that ends the rendering of source with
+// tool and the background color bg.
+func diagramStamp(tool *diagramTool, bg string, source []byte) []byte {
+	var opts string
+	if bg != "" {
+		opts = " background-color=" + bg
+	}
+	return fmt.Appendf(nil, "<!-- present: %s%s sha256:%x -->\n", tool.name, opts, sha256.Sum256(source))
 }
 
 // offFlag returns the flag setting that turns automatic rendering with

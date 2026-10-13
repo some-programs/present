@@ -60,14 +60,7 @@ func TestHotFiles(t *testing.T) {
 		"talk/b.html":   "<p>b</p>\n",
 	})
 
-	var got []string
-	for _, f := range hotFiles(filepath.Join(dir, "talk/x.slide"), nil) {
-		rel, err := filepath.Rel(dir, f)
-		if err != nil {
-			t.Fatal(err)
-		}
-		got = append(got, filepath.ToSlash(rel))
-	}
+	got := hotFiles(dirRoot(dir), "talk/x.slide", nil)
 	want := []string{
 		"shared/logo.png",
 		"talk/b.html",
@@ -84,10 +77,10 @@ func TestHotFiles(t *testing.T) {
 	}
 
 	// A presentation that does not parse keeps the files watched before.
-	old := []string{filepath.Join(dir, "talk/src/a.go")}
+	old := []string{"talk/src/a.go"}
 	writeFiles(t, dir, map[string]string{"talk/x.slide": "# Talk\n\n## Bad\n\n.nosuchcommand\n"})
-	got = hotFiles(filepath.Join(dir, "talk/x.slide"), old)
-	want = []string{filepath.Join(dir, "talk/src/a.go"), filepath.Join(dir, "talk/x.slide")}
+	got = hotFiles(dirRoot(dir), "talk/x.slide", old)
+	want = []string{"talk/src/a.go", "talk/x.slide"}
 	if !slices.Equal(got, want) {
 		t.Errorf("hotFiles after a syntax error:\ngot  %q\nwant %q", got, want)
 	}

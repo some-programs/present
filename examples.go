@@ -1,14 +1,15 @@
 package main
 
 import (
-	"crypto/sha256"
 	"embed"
-	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/some-programs/present/pkg/present"
 )
 
 // examplesFS holds the example presentations, which -doc serves at
@@ -20,98 +21,64 @@ var examplesFS embed.FS
 // examplesPath is the URL path that the examples are served at.
 const examplesPath = "/_examples"
 
-// examplesDir is the directory that the examples are served from with
-// -doc. Presentations are read from files, and diagrams are rendered next
-// to them, so the embedded examples are written out to it by
-// initExamples.
-var examplesDir string
+// examplesRoot is the root that the examples are served from with -doc.
+// Their diagrams are not rendered, so they come with their SVG files.
+var examplesRoot = contentRoot{prefix: examplesPath, fsys: must(fs.Sub(examplesFS, "examples"))}
 
-// initExamples writes the embedded examples to a directory in the user's
-// cache directory named by a hash of them, unless an earlier run already
-// has, and sets examplesDir to it.
-func initExamples() error {
-	sub, err := fs.Sub(examplesFS, "examples")
+func must[T any](v T, err error) T {
 	if err != nil {
-		return err
+		panic(err)
 	}
-	sum, err := hashFS(sub)
-	if err != nil {
-		return err
-	}
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		cache = os.TempDir()
-	}
-	parent := filepath.Join(cache, "present")
-	dir := filepath.Join(parent, fmt.Sprintf("examples-%.12x", sum))
-	if _, err := os.Stat(dir); err == nil {
-		examplesDir = dir
-		return nil
-	}
-	if err := os.MkdirAll(parent, 0o755); err != nil {
-		return err
-	}
-	// Write to a new directory and rename it into place, so that dir is
-	// either complete or missing, also with several present servers
-	// starting at once.
-	tmp, err := os.MkdirTemp(parent, "examples-tmp-")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmp)
-	if err := os.CopyFS(tmp, sub); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp, dir); err != nil {
-		if _, err2 := os.Stat(dir); err2 != nil {
-			return err
-		}
-	}
-	examplesDir = dir
-	return nil
+	return v
 }
 
-// hashFS returns a hash of the names and contents of the files in fsys.
-func hashFS(fsys fs.FS) ([]byte, error) {
-	h := sha256.New()
-	err := fs.WalkDir(fsys, ".", func(name string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		data, err := fs.ReadFile(fsys, name)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(h, "%q %d\n", name, len(data))
-		h.Write(data)
-		return nil
-	})
-	return h.Sum(nil), err
+// A contentRoot is a tree of files that presentations are served from.
+// The files are named by slash-separated paths in fsys, as fs.FS has it.
+type contentRoot struct {
+	prefix string // the URL path the files are served at, "" for the root
+	fsys   fs.FS
+	// dir is the directory that fsys reads, which diagrams are rendered
+	// to, or "" if fsys is read-only, as the embedded examples are.
+	dir string
 }
 
-// contentRoot returns the directory that the URL path p is served from:
-// examplesDir for the examples with -doc, otherwise the content directory.
-// The files in the directory are served at prefix.
-func contentRoot(p string) (prefix, dir string) {
-	if *showDoc && (p == examplesPath || strings.HasPrefix(p, examplesPath+"/")) {
-		return examplesPath, examplesDir
-	}
-	return "", *contentPath
+// dirRoot returns the root of the files in the directory dir.
+func dirRoot(dir string) contentRoot {
+	return contentRoot{fsys: os.DirFS(dir), dir: dir}
 }
 
-// contentFile returns the name of the file served at the URL path p.
-func contentFile(p string) string {
+// contentFile returns the root that the URL path p is served from, the
+// examples with -doc or otherwise the content directory, and the name of
+// the file served at p in it.
+func contentFile(p string) (contentRoot, string) {
 	p = path.Clean("/" + p)
-	prefix, dir := contentRoot(p)
-	return filepath.Join(dir, filepath.FromSlash(strings.TrimPrefix(p, prefix)))
+	root := dirRoot(*contentPath)
+	if *showDoc && (p == examplesPath || strings.HasPrefix(p, examplesPath+"/")) {
+		root = examplesRoot
+	}
+	name := strings.TrimPrefix(strings.TrimPrefix(p, root.prefix), "/")
+	if name == "" {
+		name = "."
+	}
+	return root, name
 }
 
-// trimContentDirs removes the directories that content is served from from
-// the file names in s, such as an error message shown to authors.
-func trimContentDirs(s string) string {
-	s = strings.ReplaceAll(s, filepath.Clean(*contentPath)+string(filepath.Separator), "")
-	if examplesDir != "" {
-		s = strings.ReplaceAll(s, examplesDir+string(filepath.Separator), "")
+// parse parses the presentation read from r, the file name in fsys, with
+// the files it includes read from fsys.
+func parse(fsys fs.FS, r io.Reader, name string, mode present.ParseMode) (*present.Doc, error) {
+	ctx := present.Context{ReadFile: func(name string) ([]byte, error) {
+		// The present package joins names with filepath.
+		return fs.ReadFile(fsys, filepath.ToSlash(name))
+	}}
+	return ctx.Parse(r, name, mode)
+}
+
+// parseFile parses the presentation file name in fsys.
+func parseFile(fsys fs.FS, name string, mode present.ParseMode) (*present.Doc, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		return nil, err
 	}
-	return s
+	defer f.Close()
+	return parse(fsys, f, name, mode)
 }
