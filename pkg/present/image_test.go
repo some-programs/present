@@ -17,6 +17,9 @@ func TestParseImage(t *testing.T) {
 		{".image https://example.com/a.dot", Image{URL: "https://example.com/a.dot"}},
 		{".image a.mmd", Image{URL: "a.svg", Source: "a.mmd"}},
 		{".image g.v1/a.mermaid _ 0.5", Image{URL: "g.v1/a.svg", Source: "g.v1/a.mermaid", WidthFrac: 0.5}},
+		{".image a.puml", Image{URL: "a.svg", Source: "a.puml"}},
+		{".image g/a.plantuml 0.5", Image{URL: "g/a.svg", Source: "g/a.plantuml", WidthFrac: 0.5, HeightFrac: 0.5}},
+		{".image a.pu", Image{URL: "a.svg", Source: "a.pu"}},
 		{".image -background-color transparent a.mmd 0.5", Image{URL: "a.svg", Source: "a.mmd", BackgroundColor: "transparent", WidthFrac: 0.5, HeightFrac: 0.5}},
 		{".image -background-color #f8f8f8 a.mermaid", Image{URL: "a.svg", Source: "a.mermaid", BackgroundColor: "#f8f8f8"}},
 		{".image -background-color rgb(0,0,0,0.5) a.mmd", Image{URL: "a.svg", Source: "a.mmd", BackgroundColor: "rgb(0,0,0,0.5)"}},
@@ -47,6 +50,7 @@ func TestParseImage(t *testing.T) {
 		".image -background-color -x a.mmd",
 		".image -background-color transparent a.png",
 		".image -background-color transparent a.dot",
+		".image -background-color transparent a.puml",
 		".image -background-color transparent https://example.com/a.mmd",
 		".image -bg transparent a.mmd",
 	} {

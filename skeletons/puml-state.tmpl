@@ -1,0 +1,11 @@
+@startuml
+skinparam defaultFontName {{.Font}}
+skinparam backgroundColor transparent
+
+' The other font, for part of a label:
+'	A --> B : text and <font:{{.OtherFont}}>other text</font>
+
+[*] --> A
+A --> B : event
+B --> [*]
+@enduml

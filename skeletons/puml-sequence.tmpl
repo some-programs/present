@@ -1,0 +1,10 @@
+@startuml
+skinparam defaultFontName {{.Font}}
+skinparam backgroundColor transparent
+
+' The other font, for part of a label:
+'	a -> b: text and <font:{{.OtherFont}}>other text</font>
+
+a -> b: request
+b --> a: reply
+@enduml

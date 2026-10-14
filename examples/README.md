@@ -20,11 +20,11 @@ S on a slide to see its source beside it.
   `-numbers` and `-edit`, `.fontsize`, and `.play` with a Go program, a
   multi-file program in a txtar archive, a program that does not compile,
   Python, JavaScript and TypeScript programs and a shell script.
-- [media.slide](media.slide): `.image` sizes, `.caption`, Graphviz and
-  Mermaid diagrams, `.background` and `.video`.
+- [media.slide](media.slide): `.image` sizes, `.caption`, Graphviz,
+  Mermaid and PlantUML diagrams, `.background` and `.video`.
 - [notes.article](notes.article): the article format.
 
 The diagrams in [diagrams](diagrams) are rendered to the SVG files next to
-them with `dot` and `mmdc` when a slide shows them. The SVG files are
+them with `dot`, `mmdc` and `plantuml` when a slide shows them. The SVG files are
 checked in, so the slides also work without those tools, or with
 `-norender`.

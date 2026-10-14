@@ -261,8 +261,9 @@ limit. The image never grows beyond the space left for it.
 	.image images/janet.jpg 0.4 _
 
 A diagram file is shown as the SVG file of the same name next to it: a
-Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or
-.mermaid), rendered with the Mermaid CLI, mmdc. The present program
+Graphviz file (.dot), rendered with dot, a Mermaid file (.mmd or
+.mermaid), rendered with the Mermaid CLI, mmdc, or a PlantUML file (.puml,
+.plantuml or .pu), rendered with plantuml. The present program
 renders it whenever the diagram file has changed, and marks the SVG with a
 hash of the diagram file to tell. If the tool is missing or fails, an
 earlier SVG is shown, and the error appears in the presenter notes window,
@@ -274,11 +275,17 @@ See Diagram Style for making diagrams match the slides.
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd
 	.image -background-color transparent diagrams/sequence.mmd
+	.image diagrams/classes.puml
 
 The -background-color flag, before the file name, sets the background of
 a Mermaid diagram to a CSS color written without spaces, such as
 transparent, #f8f8f8 or rgb(0,0,0,0.1); it is white otherwise. A Graphviz
-file sets its own background with the bgcolor attribute.
+file sets its own background with the bgcolor attribute, and a PlantUML
+file with skinparam backgroundColor.
+
+A PlantUML file holds one diagram, between @startuml and @enduml. Files
+that it includes with !include are read from its directory, but changes
+to them alone do not render it again.
 
 video:
 
@@ -342,9 +349,9 @@ It is your responsibility to make sure the included HTML is valid and safe.
 # Diagram Style
 
 Diagrams look like part of the presentation when they use its fonts:
-Roboto for text and JetBrains Mono for code. The new-dot and new-mmd
-commands of the present program write Graphviz and Mermaid files that do,
-in Roboto, or in JetBrains Mono with -mono.
+Roboto for text and JetBrains Mono for code. The new-dot, new-mmd and
+new-puml commands of the present program write Graphviz, Mermaid and
+PlantUML files that do, in Roboto, or in JetBrains Mono with -mono.
 
 A Graphviz diagram:
 
@@ -421,11 +428,39 @@ Other types of Mermaid diagrams use one font: a state diagram cannot escape
 the comma of a class, so a font in it has no fallback, and the classes of
 a class diagram and the participants of a sequence diagram cannot set one.
 
+A PlantUML diagram:
+
+	@startuml
+	skinparam defaultFontName Roboto,sans-serif
+	skinparam backgroundColor transparent
+	Browser -> present: Run
+	@enduml
+
+A PlantUML diagram of code:
+
+	@startuml
+	skinparam defaultFontName JetBrains Mono,monospace
+	skinparam backgroundColor transparent
+	class Worker {
+		jobs <-chan Job
+		run() error
+	}
+	@enduml
+
+A PlantUML diagram can use the other font for part of any label, with
+font in its Creole markup:
+
+	@startuml
+	skinparam defaultFontName Roboto,sans-serif
+	skinparam backgroundColor transparent
+	request -> handler: calls <font:JetBrains Mono,monospace>handle(w, r)</font>
+	@enduml
+
 The SVG is shown as an image, which cannot use the fonts of the page, so
 present embeds the Roboto and JetBrains Mono faces that an SVG file names
 in it as it serves it; the file itself is unchanged. This holds for every
 SVG file that present serves, also images and backgrounds that are not
-diagrams. Both tools size labels with the fonts installed where present
+diagrams. The tools size labels with the fonts installed where present
 runs, though, so install Roboto and JetBrains Mono there for the labels to
 fit. Present serve -doc serves both as TrueType files at
 /download/fonts.tar.

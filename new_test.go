@@ -124,6 +124,10 @@ func TestNewCommands(t *testing.T) {
 		{[]string{"new-mmd", "-type", "sequence", "login"}, "login.mmd", textFont},
 		{[]string{"new-mmd", "-type", "class", "-mono", "types"}, "types.mmd", codeFont},
 		{[]string{"new-mmd", "-type=state", "parser"}, "parser.mmd", textFont},
+		{[]string{"new-puml", "calls"}, "calls.puml", textFont},
+		{[]string{"new-puml", "-mono", "-type", "class", "objects.puml"}, "objects.puml", codeFont},
+		{[]string{"new-puml", "-type", "activity", "steps"}, "steps.puml", textFont},
+		{[]string{"new-puml", "-type", "state", "-mono", "machine"}, "machine.puml", codeFont},
 	} {
 		var stdout, stderr bytes.Buffer
 		if code := runCommand(tt.args[0], tt.args[1:], &stdout, &stderr); code != 0 {
@@ -158,6 +162,10 @@ func TestNewCommands(t *testing.T) {
 			}
 		case "flow.dot", "code.dot":
 			if !strings.Contains(string(data), `fontname="`+tt.font+`"`) {
+				t.Errorf("%v: %s does not use %s:\n%s", tt.args, tt.file, tt.font, data)
+			}
+		case "calls.puml", "objects.puml", "steps.puml", "machine.puml":
+			if !strings.Contains(string(data), "skinparam defaultFontName "+tt.font+"\n") {
 				t.Errorf("%v: %s does not use %s:\n%s", tt.args, tt.file, tt.font, data)
 			}
 		default:

@@ -21,10 +21,11 @@ import (
 )
 
 var (
-	noRender = serveFlags.Bool("norender", false, "do not render the diagram files (.dot, .mmd, .mermaid) of .image commands; show their existing .svg files as they are")
+	noRender = serveFlags.Bool("norender", false, "do not render the diagram files (.dot, .mmd, .mermaid, .puml, .plantuml, .pu) of .image commands; show their existing .svg files as they are")
 
-	dotCmd  = serveFlags.String("dot", "dot", "Graphviz command that renders the .dot files of .image commands to SVG; empty shows their existing .svg files as they are")
-	mmdcCmd = serveFlags.String("mmdc", "mmdc", "Mermaid CLI command that renders the .mmd and .mermaid files of .image commands to SVG; empty shows their existing .svg files as they are")
+	dotCmd      = serveFlags.String("dot", "dot", "Graphviz command that renders the .dot files of .image commands to SVG; empty shows their existing .svg files as they are")
+	mmdcCmd     = serveFlags.String("mmdc", "mmdc", "Mermaid CLI command that renders the .mmd and .mermaid files of .image commands to SVG; empty shows their existing .svg files as they are")
+	plantumlCmd = serveFlags.String("plantuml", "plantuml", "PlantUML command that renders the .puml, .plantuml and .pu files of .image commands to SVG; empty shows their existing .svg files as they are")
 )
 
 // A diagramTool renders diagram files of one kind to SVG.
@@ -38,6 +39,9 @@ type diagramTool struct {
 	// current directory, to standard output as SVG, with the background
 	// color bg, if not empty.
 	args func(src, bg string) []string
+	// stdin reports whether cmd reads src from standard input rather than
+	// from the file named in its arguments.
+	stdin bool
 }
 
 var (
@@ -57,13 +61,22 @@ var (
 			return args
 		},
 	}
+	plantumlTool = &diagramTool{
+		name:  "plantuml",
+		cmd:   plantumlCmd,
+		args:  func(_, _ string) []string { return []string{"-tsvg", "-pipe"} },
+		stdin: true,
+	}
 )
 
 // diagramTools maps the extensions of diagram files to their tools.
 var diagramTools = map[string]*diagramTool{
-	".dot":     dotTool,
-	".mmd":     mmdcTool,
-	".mermaid": mmdcTool,
+	".dot":      dotTool,
+	".mmd":      mmdcTool,
+	".mermaid":  mmdcTool,
+	".puml":     plantumlTool,
+	".plantuml": plantumlTool,
+	".pu":       plantumlTool,
 }
 
 // diagramMu serializes rendering, since the slides and the notes window
@@ -180,6 +193,9 @@ func renderDiagram(root contentRoot, src, out, bg string) (svg []byte, err error
 	defer cancel()
 	cmd := exec.CommandContext(ctx, *tool.cmd, tool.args(path.Base(src), bg)...)
 	cmd.Dir = filepath.Join(root.dir, filepath.FromSlash(path.Dir(src)))
+	if tool.stdin {
+		cmd.Stdin = bytes.NewReader(source)
+	}
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	svg, err = cmd.Output()

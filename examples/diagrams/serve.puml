@@ -1,0 +1,13 @@
+@startuml
+skinparam defaultFontName Roboto,sans-serif
+skinparam backgroundColor transparent
+
+participant Browser
+participant present
+participant "<font:JetBrains Mono,monospace>plantuml</font>" as tool
+
+Browser -> present: GET talk.slide
+present -> tool: render changed diagrams
+tool --> present: SVG
+present --> Browser: slides
+@enduml

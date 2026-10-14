@@ -12,7 +12,7 @@ Source: [github.com/some-programs/present](https://github.com/some-programs/pres
 - Slides and articles written in plain-text Markdown, shown in the browser.
 - Code from source files that runs live from the slide: Go, Python, JavaScript,
   TypeScript, or anything with a shebang.
-- Images, video, and Graphviz and Mermaid diagrams.
+- Images, video, and Graphviz, Mermaid and PlantUML diagrams.
 - Presenter notes window, kept in sync with the slides.
 - Hot reload while you write.
 - Single binary that works offline.

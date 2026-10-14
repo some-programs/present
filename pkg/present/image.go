@@ -26,11 +26,12 @@ func init() {
 // the width and the height. Slides fit each image into the space left for
 // it, keeping its aspect ratio; with no size it fills that space.
 //
-// A diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), is shown as
-// the SVG file next to it with the same name, which the program serving the
-// slides keeps up to date. The -background-color flag sets the background
-// of a Mermaid diagram, which is white otherwise; a Graphviz diagram sets
-// its own with the bgcolor attribute.
+// A diagram file, Graphviz (.dot), Mermaid (.mmd, .mermaid) or PlantUML
+// (.puml, .plantuml, .pu), is shown as the SVG file next to it with the
+// same name, which the program serving the slides keeps up to date. The
+// -background-color flag sets the background of a Mermaid diagram, which
+// is white otherwise; a Graphviz or PlantUML diagram sets its own, with
+// the bgcolor attribute or skinparam backgroundColor.
 type Image struct {
 	Cmd    string // original command from present source
 	URL    string
@@ -54,7 +55,7 @@ type Image struct {
 
 // diagramExts are the extensions of the diagram files that an image can be
 // made from.
-var diagramExts = []string{".dot", ".mmd", ".mermaid"}
+var diagramExts = []string{".dot", ".mmd", ".mermaid", ".puml", ".plantuml", ".pu"}
 
 // mermaidExts are the extensions of the diagram files rendered by Mermaid.
 var mermaidExts = []string{".mmd", ".mermaid"}

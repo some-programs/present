@@ -14,7 +14,7 @@ Source: [github.com/some-programs/present](https://github.com/some-programs/pres
 - Slides and articles written in plain-text Markdown, shown in the browser.
 - Code from source files that runs live from the slide: Go, Python, JavaScript,
   TypeScript, or anything with a shebang.
-- Images, video, and Graphviz and Mermaid diagrams.
+- Images, video, and Graphviz, Mermaid and PlantUML diagrams.
 - Presenter notes window, kept in sync with the slides.
 - Hot reload while you write.
 - Single binary that works offline.
@@ -63,7 +63,7 @@ Programs in .play blocks are built and run on the machine running present, and t
 
 With -hot, an open presentation reloads in the browser whenever its file, or a file it uses, changes. It opens at the first slide that changed, and a presentation that no longer parses shows its error over the old slides, as does a diagram that cannot be rendered. -hot cannot be used with -notes.
 
-An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows the SVG file of the same name, which present renders with dot or mmdc whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot= or -mmdc= does the same for one kind of diagram.
+An .image of a diagram file, Graphviz (.dot), Mermaid (.mmd, .mermaid) or PlantUML (.puml, .plantuml, .pu), shows the SVG file of the same name, which present renders with dot, mmdc or plantuml whenever the diagram file changes. With -norender, present does not render them, and shows the existing SVG files as they are; -dot=, -mmdc= or -plantuml= does the same for one kind of diagram.
 
 With -doc, the Talks page lists this documentation, served at /\_doc, and the example presentations, which are built into present and served at /\_examples, for reading them next to the presentations being written. Pressing S on a slide then shows its source beside it: the lines of the presentation file that make it, and the files that its commands use. Adding ?source=true to the URL of a presentation opens it with the source shown, and ?source=false with it hidden. The fonts of the slides are served too, at /download/fonts.tar, for installing them.
 
@@ -74,8 +74,9 @@ Other commands write new files from skeletons with present's defaults, and fail 
 	present new-dot diagrams/flow                # diagrams/flow.dot, a Graphviz diagram
 	present new-mmd diagrams/flow                # diagrams/flow.mmd, a Mermaid flowchart
 	present new-mmd -type sequence diagrams/seq  # diagrams/seq.mmd, a Mermaid sequence diagram
+	present new-puml diagrams/seq                # diagrams/seq.puml, a PlantUML sequence diagram
 
-The diagrams use the fonts of the slides, as described under Diagram Style in the present package: Roboto, or JetBrains Mono with -mono, for a diagram of code. The -type of a Mermaid diagram is flowchart, the default, sequence, class or state. Run "present COMMAND -h" for the usage of a command.
+The diagrams use the fonts of the slides, as described under Diagram Style in the present package: Roboto, or JetBrains Mono with -mono, for a diagram of code. The -type of a Mermaid diagram is flowchart, the default, sequence, class or state, and of a PlantUML diagram sequence, the default, class, activity or state. Run "present COMMAND -h" for the usage of a command.
 
 The export command writes slide presentations and articles as static HTML pages, for any web server to serve:
 
@@ -303,13 +304,16 @@ The first argument is always the file name. On slides, the image is fitted into 
 	.image images/janet.jpg _ 300
 	.image images/janet.jpg 0.4 _
 
-A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, or a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window, or at the top of the page with -hot; without an earlier SVG, the error takes the image's place. Diagram files that share an SVG file, such as flow.dot and flow.mmd, are not rendered, and are an error of that kind. See Diagram Style for making diagrams match the slides.
+A diagram file is shown as the SVG file of the same name next to it: a Graphviz file (.dot), rendered with dot, a Mermaid file (.mmd or .mermaid), rendered with the Mermaid CLI, mmdc, or a PlantUML file (.puml, .plantuml or .pu), rendered with plantuml. The present program renders it whenever the diagram file has changed, and marks the SVG with a hash of the diagram file to tell. If the tool is missing or fails, an earlier SVG is shown, and the error appears in the presenter notes window, or at the top of the page with -hot; without an earlier SVG, the error takes the image's place. Diagram files that share an SVG file, such as flow.dot and flow.mmd, are not rendered, and are an error of that kind. See Diagram Style for making diagrams match the slides.
 
 	.image diagrams/flow.dot
 	.image diagrams/sequence.mmd
 	.image -background-color transparent diagrams/sequence.mmd
+	.image diagrams/classes.puml
 
-The -background-color flag, before the file name, sets the background of a Mermaid diagram to a CSS color written without spaces, such as transparent, #f8f8f8 or rgb(0,0,0,0.1); it is white otherwise. A Graphviz file sets its own background with the bgcolor attribute.
+The -background-color flag, before the file name, sets the background of a Mermaid diagram to a CSS color written without spaces, such as transparent, #f8f8f8 or rgb(0,0,0,0.1); it is white otherwise. A Graphviz file sets its own background with the bgcolor attribute, and a PlantUML file with skinparam backgroundColor.
+
+A PlantUML file holds one diagram, between @startuml and @enduml. Files that it includes with !include are read from its directory, but changes to them alone do not render it again.
 
 video:
 
@@ -356,7 +360,7 @@ The function html includes the contents of the specified file as unescaped HTML.
 
 ### Diagram Style
 
-Diagrams look like part of the presentation when they use its fonts: Roboto for text and JetBrains Mono for code. The new-dot and new-mmd commands of the present program write Graphviz and Mermaid files that do, in Roboto, or in JetBrains Mono with -mono.
+Diagrams look like part of the presentation when they use its fonts: Roboto for text and JetBrains Mono for code. The new-dot, new-mmd and new-puml commands of the present program write Graphviz, Mermaid and PlantUML files that do, in Roboto, or in JetBrains Mono with -mono.
 
 A Graphviz diagram:
 
@@ -427,7 +431,34 @@ A Mermaid flowchart can use both fonts, with a class for each, as the flowcharts
 
 Other types of Mermaid diagrams use one font: a state diagram cannot escape the comma of a class, so a font in it has no fallback, and the classes of a class diagram and the participants of a sequence diagram cannot set one.
 
-The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. Both tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. Present serve -doc serves both as TrueType files at /download/fonts.tar.
+A PlantUML diagram:
+
+	@startuml
+	skinparam defaultFontName Roboto,sans-serif
+	skinparam backgroundColor transparent
+	Browser -> present: Run
+	@enduml
+
+A PlantUML diagram of code:
+
+	@startuml
+	skinparam defaultFontName JetBrains Mono,monospace
+	skinparam backgroundColor transparent
+	class Worker {
+		jobs <-chan Job
+		run() error
+	}
+	@enduml
+
+A PlantUML diagram can use the other font for part of any label, with font in its Creole markup:
+
+	@startuml
+	skinparam defaultFontName Roboto,sans-serif
+	skinparam backgroundColor transparent
+	request -> handler: calls <font:JetBrains Mono,monospace>handle(w, r)</font>
+	@enduml
+
+The SVG is shown as an image, which cannot use the fonts of the page, so present embeds the Roboto and JetBrains Mono faces that an SVG file names in it as it serves it; the file itself is unchanged. This holds for every SVG file that present serves, also images and backgrounds that are not diagrams. The tools size labels with the fonts installed where present runs, though, so install Roboto and JetBrains Mono there for the labels to fit. Present serve -doc serves both as TrueType files at /download/fonts.tar.
 
 ### Presenter Notes
 

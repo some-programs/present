@@ -25,7 +25,7 @@ jobs:
         with:
           go-version-file: go.mod
       # The SVG files of the diagrams are checked in, so -norender spares
-      # installing dot and mmdc.
+      # installing dot, mmdc and plantuml.
       - name: Export examples
         run: go run . export -norender -source -o _site examples/*.slide examples/*.article
       - name: Write README and examples index

@@ -136,6 +136,58 @@ printf '<svg>%s</svg>\n' "$(cat g.mmd)"
 	}
 }
 
+func TestRenderPlantUML(t *testing.T) {
+	dir := t.TempDir()
+
+	// A stand-in for plantuml that wraps the diagram it reads from
+	// standard input in an svg element, and fails like plantuml, with an
+	// SVG of the error on standard output, on input containing "bad".
+	fake := filepath.Join(dir, "fakeplantuml")
+	script := `#!/bin/sh
+[ "$*" = "-tsvg -pipe" ] || { echo "bad arguments: $*" >&2; exit 2; }
+in=$(cat)
+case "$in" in
+*bad*)
+	echo '<svg>error</svg>'
+	printf 'ERROR\n1\nSyntax Error?\nSome diagram description contains errors\n' >&2
+	exit 200
+esac
+printf '<svg>%s</svg>\n' "$in"
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := *plantumlCmd
+	*plantumlCmd = fake
+	t.Cleanup(func() { *plantumlCmd = old })
+
+	src := filepath.Join(dir, "g.puml")
+	if err := os.WriteFile(src, []byte("a -> b"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	svg, err := renderDiagram(dirRoot(dir), "g.puml", "g.svg", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "<svg>a -> b</svg>\n<!-- present: plantuml sha256:"
+	if !strings.HasPrefix(string(svg), want) {
+		t.Errorf("renderDiagram = %q, want it to start with %q", svg, want)
+	}
+
+	// A failure keeps the earlier rendering, not the SVG of the error.
+	if err := os.WriteFile(src, []byte("bad"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	svg, err = renderDiagram(dirRoot(dir), "g.puml", "g.svg", "")
+	wantErr := "g.puml: ERROR\n1\nSyntax Error?\nSome diagram description contains errors"
+	if err == nil || err.Error() != wantErr {
+		t.Errorf("renderDiagram error = %v, want %q", err, wantErr)
+	}
+	if !strings.HasPrefix(string(svg), want) {
+		t.Errorf("renderDiagram after a failure = %q, want it to start with %q", svg, want)
+	}
+}
+
 func TestRenderMermaidBackground(t *testing.T) {
 	dir := t.TempDir()
 

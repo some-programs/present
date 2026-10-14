@@ -23,11 +23,12 @@ a file it uses, changes. It opens at the first slide that changed, and a
 presentation that no longer parses shows its error over the old slides, as
 does a diagram that cannot be rendered. -hot cannot be used with -notes.
 
-An .image of a diagram file, Graphviz (.dot) or Mermaid (.mmd, .mermaid), shows
-the SVG file of the same name, which present renders with dot or mmdc
-whenever the diagram file changes. With -norender, present does not render
-them, and shows the existing SVG files as they are; -dot= or -mmdc= does
-the same for one kind of diagram.
+An .image of a diagram file, Graphviz (.dot), Mermaid (.mmd, .mermaid) or
+PlantUML (.puml, .plantuml, .pu), shows the SVG file of the same name, which
+present renders with dot, mmdc or plantuml whenever the diagram file
+changes. With -norender, present does not render them, and shows the
+existing SVG files as they are; -dot=, -mmdc= or -plantuml= does the same
+for one kind of diagram.
 
 With -doc, the Talks page lists this documentation, served at /_doc, and
 the example presentations, which are built into present and served at
@@ -46,11 +47,13 @@ fail rather than overwrite a file:
 	present new-dot diagrams/flow                # diagrams/flow.dot, a Graphviz diagram
 	present new-mmd diagrams/flow                # diagrams/flow.mmd, a Mermaid flowchart
 	present new-mmd -type sequence diagrams/seq  # diagrams/seq.mmd, a Mermaid sequence diagram
+	present new-puml diagrams/seq                # diagrams/seq.puml, a PlantUML sequence diagram
 
 The diagrams use the fonts of the slides, as described under Diagram Style in
 the present package: Roboto, or JetBrains Mono with -mono, for a diagram of
 code. The -type of a Mermaid diagram is flowchart, the default, sequence,
-class or state. Run "present COMMAND -h" for the usage of a command.
+class or state, and of a PlantUML diagram sequence, the default, class,
+activity or state. Run "present COMMAND -h" for the usage of a command.
 
 The export command writes slide presentations and articles as static HTML
 pages, for any web server to serve:

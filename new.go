@@ -69,6 +69,14 @@ var newCommands = []newCommand{
 		types: []string{"flowchart", "sequence", "class", "state"},
 		next:  showImage,
 	},
+	{
+		name:  "new-puml",
+		ext:   ".puml",
+		help:  "write a new PlantUML diagram that uses the fonts of the slides",
+		mono:  true,
+		types: []string{"sequence", "class", "activity", "state"},
+		next:  showImage,
+	},
 }
 
 // The fonts of the slides, for diagrams: textFont for text and codeFont for

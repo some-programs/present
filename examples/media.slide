@@ -44,6 +44,13 @@ and shows parse errors over the old slides:
 
 .image diagrams/hot.mermaid
 
+## PlantUML
+
+`.puml`, `.plantuml` and `.pu` files are rendered with `plantuml`:
+
+.image diagrams/serve.puml 0.7
+.caption How present serves a slide.
+
 ## Diagrams of code
 
 Diagrams of code use the font of code on the slides, in Graphviz and Mermaid:
