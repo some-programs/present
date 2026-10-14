@@ -12,13 +12,6 @@ import (
 	"time"
 )
 
-// setContentPath sets *contentPath to dir for the duration of the test.
-func setContentPath(t *testing.T, dir string) {
-	old := *contentPathFlag
-	*contentPathFlag = dir
-	t.Cleanup(func() { *contentPathFlag = old })
-}
-
 func writeFiles(t *testing.T, dir string, files map[string]string) {
 	t.Helper()
 	for name, data := range files {
@@ -34,7 +27,7 @@ func writeFiles(t *testing.T, dir string, files map[string]string) {
 
 func TestHotFiles(t *testing.T) {
 	dir := t.TempDir()
-	setContentPath(t, dir)
+	s := &server{content: dirRoot(dir)}
 	writeFiles(t, dir, map[string]string{
 		"talk/x.slide": `# Talk
 
@@ -60,7 +53,7 @@ func TestHotFiles(t *testing.T) {
 		"talk/b.html":   "<p>b</p>\n",
 	})
 
-	got := hotFiles(dirRoot(dir), "talk/x.slide", nil)
+	got := s.hotFiles(s.content, "talk/x.slide", nil)
 	want := []string{
 		"shared/logo.png",
 		"talk/b.html",
@@ -79,7 +72,7 @@ func TestHotFiles(t *testing.T) {
 	// A presentation that does not parse keeps the files watched before.
 	old := []string{"talk/src/a.go"}
 	writeFiles(t, dir, map[string]string{"talk/x.slide": "# Talk\n\n## Bad\n\n.nosuchcommand\n"})
-	got = hotFiles(dirRoot(dir), "talk/x.slide", old)
+	got = s.hotFiles(s.content, "talk/x.slide", old)
 	want = []string{"talk/src/a.go", "talk/x.slide"}
 	if !slices.Equal(got, want) {
 		t.Errorf("hotFiles after a syntax error:\ngot  %q\nwant %q", got, want)
@@ -88,7 +81,7 @@ func TestHotFiles(t *testing.T) {
 
 func TestHotHandler(t *testing.T) {
 	dir := t.TempDir()
-	setContentPath(t, dir)
+	s := &server{content: dirRoot(dir)}
 	old := hotInterval
 	hotInterval = 10 * time.Millisecond
 	t.Cleanup(func() { hotInterval = old })
@@ -98,7 +91,7 @@ func TestHotHandler(t *testing.T) {
 		"a.go":    "package a\n",
 	})
 
-	srv := httptest.NewServer(http.HandlerFunc(hotHandler))
+	srv := httptest.NewServer(http.HandlerFunc(s.hotHandler))
 	defer srv.Close()
 
 	if res, err := http.Get(srv.URL + "/_hot?doc=/nosuch.txt"); err != nil {

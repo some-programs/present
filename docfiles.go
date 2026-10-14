@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // docFiles returns the presentation files that paths name, as given on the
@@ -56,4 +57,10 @@ func isDoc(name string) bool {
 		return true
 	}
 	return false
+}
+
+// showDir reports whether present looks in the directory named n: those
+// whose names start with . or _ are not listed, and docFiles skips them.
+func showDir(n string) bool {
+	return !strings.HasPrefix(n, ".") && !strings.HasPrefix(n, "_")
 }

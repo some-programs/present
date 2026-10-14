@@ -217,13 +217,10 @@ func embedSVGFonts(svg []byte, faces []fontFace) []byte {
 	return slices.Concat(svg[:end], []byte(style), svg[end:])
 }
 
-// svgFontFaces are the faces that serveSVG embeds in SVG files.
-var svgFontFaces []fontFace
-
-// serveSVG serves the SVG file name in fsys with the fonts it uses
-// embedded, as embedSVGFonts does. It reports false, having written
+// serveSVG serves the SVG file name in fsys with the fonts it uses, of
+// faces, embedded, as embedSVGFonts does. It reports false, having written
 // nothing, if name cannot be read as a file.
-func serveSVG(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) bool {
+func serveSVG(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string, faces []fontFace) bool {
 	f, err := fsys.Open(name)
 	if err != nil {
 		return false
@@ -237,6 +234,6 @@ func serveSVG(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) b
 	if err != nil {
 		return false
 	}
-	http.ServeContent(w, r, name, fi.ModTime(), bytes.NewReader(embedSVGFonts(svg, svgFontFaces)))
+	http.ServeContent(w, r, name, fi.ModTime(), bytes.NewReader(embedSVGFonts(svg, faces)))
 	return true
 }

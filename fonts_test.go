@@ -160,16 +160,13 @@ func TestServeSVG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func(old []fontFace) { svgFontFaces = old }(svgFontFaces)
-	svgFontFaces = faces
-
 	dir := t.TempDir()
 	name := filepath.Join(dir, "g.svg")
 	if err := os.WriteFile(name, []byte(`<svg font-family="Roboto"><text>a</text></svg>`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	if !serveSVG(w, httptest.NewRequest("GET", "/g.svg", nil), os.DirFS(dir), "g.svg") {
+	if !serveSVG(w, httptest.NewRequest("GET", "/g.svg", nil), os.DirFS(dir), "g.svg", faces) {
 		t.Fatal("serveSVG reported that it did not serve g.svg")
 	}
 	if got, want := w.Header().Get("Content-Type"), "image/svg+xml"; got != want {
@@ -181,7 +178,7 @@ func TestServeSVG(t *testing.T) {
 
 	for _, name := range []string{"missing.svg", "."} {
 		w := httptest.NewRecorder()
-		if serveSVG(w, httptest.NewRequest("GET", "/x.svg", nil), os.DirFS(dir), name) || w.Body.Len() > 0 {
+		if serveSVG(w, httptest.NewRequest("GET", "/x.svg", nil), os.DirFS(dir), name, faces) || w.Body.Len() > 0 {
 			t.Errorf("serveSVG of %s served it", name)
 		}
 	}

@@ -17,7 +17,7 @@
 
   {{with .Path}}<h2>{{.}}</h2>{{end}}
 
-  {{if and doc (not .Path)}}
+  {{if and .Doc (not .Path)}}
   <h4>Documentation:</h4>
   <dl>
   <dd><a href="/_doc">README</a>: how to write presentations and run present</dd>
@@ -61,7 +61,7 @@
   </dl>
   {{end}}
 
-  {{if and doc (not .Path)}}
+  {{if and .Doc (not .Path)}}
   <h4>Fonts:</h4>
   <dl>
   <dd><a href="/download/fonts.tar">fonts.tar</a>: Roboto and JetBrains Mono, for diagrams to match the slides</dd>

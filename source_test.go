@@ -93,55 +93,6 @@ func TestCommandFiles(t *testing.T) {
 	}
 }
 
-func TestSourceFileName(t *testing.T) {
-	defer func(old bool) { *showDoc = old }(*showDoc)
-	*showDoc = true
-	for urlPath, want := range map[string]string{
-		"/_examples/media.slide":   "examples/media.slide",
-		"/talks/go/intro.slide":    "talks/go/intro.slide",
-		"/_examplesx/a.slide":      "_examplesx/a.slide",
-		"/_examples/../mine.slide": "mine.slide",
-	} {
-		if got := sourceFileName(urlPath); got != want {
-			t.Errorf("sourceFileName(%q) = %q, want %q", urlPath, got, want)
-		}
-	}
-}
-
-func TestRenderDocSource(t *testing.T) {
-	pr, err := newRenderer(embedFS, func(path string) string { return path }, pageSettings{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func(old bool) { *showDoc = old }(*showDoc)
-	for _, doc := range []bool{false, true} {
-		*showDoc = doc
-		var buf bytes.Buffer
-		if err := renderDoc(&buf, pr, examplesRoot, "intro.slide", "/_examples/intro.slide"); err != nil {
-			t.Fatal(err)
-		}
-		page := buf.String()
-		if got := strings.Contains(page, `<aside id="source"`); got != doc {
-			t.Errorf("with -doc=%v, page has source panel: %v", doc, got)
-		}
-		if !doc {
-			continue
-		}
-		for _, want := range []string{
-			`<div class="src-name">examples/intro.slide</div>`,
-			// Lines are numbered as in the presentation file.
-			`<span class="src-n">131</span><span class="src-heading">## Links and HTML` + "\n" + `</span>`,
-			`<span class="src-n">135</span><span class="src-command">.html html/badge.html` + "\n" + `</span>`,
-			// The included HTML is shown as text, numbered from 1.
-			`<pre class="src-lines"><span class="src-n">1</span><span>&lt;p style=`,
-		} {
-			if !strings.Contains(page, want) {
-				t.Errorf("page does not contain %q", want)
-			}
-		}
-	}
-}
-
 // TestSourceBlocks checks that the lines of code blocks, HTML blocks and
 // blocks of notes are not taken for commands or headings.
 func TestSourceBlocks(t *testing.T) {

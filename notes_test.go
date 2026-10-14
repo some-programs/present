@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -54,7 +53,7 @@ Nothing to say.
 `,
 	})
 	var buf bytes.Buffer
-	if err := renderNotes(&buf, pr, os.DirFS(dir), "x.slide"); err != nil {
+	if err := (&server{renderer: pr}).renderNotes(&buf, dirRoot(dir), "x.slide"); err != nil {
 		t.Fatal(err)
 	}
 

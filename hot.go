@@ -15,27 +15,16 @@ import (
 	"github.com/some-programs/present/pkg/present"
 )
 
-var hot = serveFlags.Bool("hot", false, "reload presentations in the browser when they or the files they use change (not allowed with -notes)")
-
 // hotInterval is how often the files of a presentation open in a browser
 // are checked for changes.
 var hotInterval = 200 * time.Millisecond
-
-// initHot registers the handler that static/js/hot.js listens to, if -hot
-// is set.
-func initHot() {
-	if !*hot {
-		return
-	}
-	http.HandleFunc("/_hot", hotHandler)
-}
 
 // hotHandler sends a "change" server-sent event each time the presentation
 // named by the doc parameter, or a file it uses, has changed. It waits for
 // the files to stay the same for one check, since editors may save a file in
 // several steps.
-func hotHandler(w http.ResponseWriter, r *http.Request) {
-	root, name := contentFile(r.URL.Query().Get("doc"))
+func (s *server) hotHandler(w http.ResponseWriter, r *http.Request) {
+	root, name := s.file(r.URL.Query().Get("doc"))
 	if !isDoc(name) {
 		http.NotFound(w, r)
 		return
@@ -51,7 +40,7 @@ func hotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := hotFiles(root, name, nil)
+	files := s.hotFiles(root, name, nil)
 	sent := stamps(root.fsys, files)
 	prev := sent
 	ticker := time.NewTicker(hotInterval)
@@ -67,7 +56,7 @@ func hotHandler(w http.ResponseWriter, r *http.Request) {
 			// The presentation may now use other files. Look before
 			// telling the browser, so that a file changed while it
 			// reloads is not taken as already sent.
-			files = hotFiles(root, name, files)
+			files = s.hotFiles(root, name, files)
 			cur = stamps(root.fsys, files)
 			sent = cur
 			if _, err := io.WriteString(w, "event: change\ndata: change\n\n"); err != nil {
@@ -86,7 +75,7 @@ func hotHandler(w http.ResponseWriter, r *http.Request) {
 // and videos. If the presentation does not parse, the result also holds the
 // files in old, the result of an earlier call, so that they are still
 // watched.
-func hotFiles(root contentRoot, name string, old []string) []string {
+func (s *server) hotFiles(root contentRoot, name string, old []string) []string {
 	files := []string{name}
 	ctx := present.Context{ReadFile: func(name string) ([]byte, error) {
 		// The present package joins names with filepath.
@@ -103,31 +92,31 @@ func hotFiles(root contentRoot, name string, old []string) []string {
 	if err != nil {
 		files = append(files, old...)
 	} else {
-		for _, s := range doc.Sections {
-			files = sectionFiles(files, root, path.Dir(name), s)
+		for _, sec := range doc.Sections {
+			files = s.sectionFiles(files, root, path.Dir(name), sec)
 		}
 	}
 	slices.Sort(files)
 	return slices.Compact(files)
 }
 
-// sectionFiles appends the images and videos of s to files. Their URLs are
-// relative to dir, the directory of the presentation in root.
-func sectionFiles(files []string, root contentRoot, dir string, s present.Section) []string {
-	files = appendURLFile(files, root, dir, s.Background)
-	for _, e := range s.Elem {
+// sectionFiles appends the images and videos of sec to files. Their URLs
+// are relative to dir, the directory of the presentation in root.
+func (s *server) sectionFiles(files []string, root contentRoot, dir string, sec present.Section) []string {
+	files = s.appendURLFile(files, root, dir, sec.Background)
+	for _, e := range sec.Elem {
 		switch e := e.(type) {
 		case present.Section:
-			files = sectionFiles(files, root, dir, e)
+			files = s.sectionFiles(files, root, dir, e)
 		case present.Image:
 			// The SVG made from a diagram file changes only with it.
 			if e.Source != "" {
-				files = appendURLFile(files, root, dir, e.Source)
+				files = s.appendURLFile(files, root, dir, e.Source)
 			} else {
-				files = appendURLFile(files, root, dir, e.URL)
+				files = s.appendURLFile(files, root, dir, e.URL)
 			}
 		case present.Video:
-			files = appendURLFile(files, root, dir, e.URL)
+			files = s.appendURLFile(files, root, dir, e.URL)
 		}
 	}
 	return files
@@ -135,13 +124,13 @@ func sectionFiles(files []string, root contentRoot, dir string, s present.Sectio
 
 // appendURLFile appends the file served at the URL ref to files, if it is
 // served from root.
-func appendURLFile(files []string, root contentRoot, dir, ref string) []string {
+func (s *server) appendURLFile(files []string, root contentRoot, dir, ref string) []string {
 	u, err := url.Parse(ref)
 	if err != nil || ref == "" || u.Scheme != "" || u.Host != "" {
 		return files
 	}
 	if strings.HasPrefix(u.Path, "/") {
-		if r, name := contentFile(u.Path); r.prefix == root.prefix {
+		if r, name := s.file(u.Path); r.prefix == root.prefix {
 			files = append(files, name)
 		}
 		return files

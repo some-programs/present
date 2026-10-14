@@ -130,7 +130,7 @@ func TestCompressHandler(t *testing.T) {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/files/", http.StripPrefix("/files", http.FileServer(http.Dir(dir))))
-	// The page is written without a Content-Type, as dirHandler does.
+	// The page is written without a Content-Type, as server.serveFiles does.
 	mux.HandleFunc("/page", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(page))
 	})

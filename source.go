@@ -11,17 +11,6 @@ import (
 	"github.com/some-programs/present/pkg/present"
 )
 
-// sourceFileName returns the name that the source panel shows for the
-// presentation file served at the URL path urlPath: its path in the content
-// directory, or in the examples directory of the repository.
-func sourceFileName(urlPath string) string {
-	urlPath = path.Clean("/" + urlPath)
-	if root, _ := contentFile(urlPath); root.prefix == examplesPath {
-		return "examples" + strings.TrimPrefix(urlPath, examplesPath)
-	}
-	return strings.TrimPrefix(urlPath, "/")
-}
-
 // A slideSource is the source of one slide of a presentation, which the
 // slides show beside it with -doc, or exported with -source, when S is
 // pressed.

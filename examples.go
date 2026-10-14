@@ -5,9 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/some-programs/present/pkg/present"
 )
@@ -45,22 +43,6 @@ type contentRoot struct {
 // dirRoot returns the root of the files in the directory dir.
 func dirRoot(dir string) contentRoot {
 	return contentRoot{fsys: os.DirFS(dir), dir: dir}
-}
-
-// contentFile returns the root that the URL path p is served from, the
-// examples with -doc or otherwise the content directory, and the name of
-// the file served at p in it.
-func contentFile(p string) (contentRoot, string) {
-	p = path.Clean("/" + p)
-	root := dirRoot(*contentPathFlag)
-	if *showDoc && (p == examplesPath || strings.HasPrefix(p, examplesPath+"/")) {
-		root = examplesRoot
-	}
-	name := strings.TrimPrefix(strings.TrimPrefix(p, root.prefix), "/")
-	if name == "" {
-		name = "."
-	}
-	return root, name
 }
 
 // parse parses the presentation read from r, the file name in fsys, with
