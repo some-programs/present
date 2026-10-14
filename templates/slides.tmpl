@@ -18,7 +18,7 @@
       var notesEnabled = {{.NotesEnabled}};
       var preloadEnabled = {{.PreloadEnabled}};
     </script>
-    {{if hot}}
+    {{if .Hot}}
     <script defer src='{{static "/static/js/hot.js"}}'></script>
     {{end}}
     <script defer src='{{static "/static/js/notes.js"}}'></script>
@@ -55,7 +55,7 @@
   <!-- end of slide {{$s.Number}} -->
   {{end}}{{/* of Slide block */}}
 
-  {{if thankYou}}
+  {{if .ThankYou}}
       <article>
         <h3>Thank you</h3>
         {{range .Authors}}

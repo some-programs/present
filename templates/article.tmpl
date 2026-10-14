@@ -7,7 +7,7 @@
     <title>{{.Title}}</title>
     <link type="text/css" rel="stylesheet" href="{{static "/static/article.css"}}">
     <meta charset='utf-8'>
-    {{if hot}}
+    {{if .Hot}}
     <script defer src='{{static "/static/js/hot.js"}}'></script>
     {{end}}
   </head>

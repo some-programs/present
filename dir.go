@@ -118,8 +118,6 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 		tmpl = tmpl.Funcs(template.FuncMap{
 			"playable":     playable,
 			"sectionNotes": sectionNotes,
-			"thankYou":     func() bool { return *thankYou },
-			"hot":          func() bool { return *hot },
 			"static":       staticURL,
 		})
 		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
@@ -139,8 +137,8 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 }
 
 // pageData is what the templates of presentations and articles are
-// executed with: what present.Doc.Render passes them, and with -doc, or
-// export -source, the source of each slide.
+// executed with: what present.Doc.Render passes them, the settings of the
+// page, and with -doc, or export -source, the source of each slide.
 type pageData struct {
 	*present.Doc
 	Template       *template.Template
@@ -148,6 +146,8 @@ type pageData struct {
 	NotesEnabled   bool
 	PreloadEnabled bool
 	InlineFonts    bool // fonts.css holds the fonts, so they are not preloaded
+	ThankYou       bool // end slides with a "Thank you" slide, with -thankyou
+	Hot            bool // reload the page when its files change, with -hot
 
 	SourceFile string        // the presentation file, as sourceFileName names it
 	Sources    []slideSource // the source of each slide, with -doc or export -source
@@ -190,6 +190,8 @@ func newPageData(doc *present.Doc, docFile string) pageData {
 		PlayEnabled:    present.PlayEnabled,
 		NotesEnabled:   present.NotesEnabled,
 		PreloadEnabled: present.PreloadEnabled,
+		ThankYou:       *thankYou,
+		Hot:            *hot,
 	}
 }
 
