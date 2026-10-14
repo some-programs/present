@@ -122,14 +122,14 @@ func exportDocs(out string, files []string, source bool, stdout io.Writer) error
 			return fmt.Errorf("%s is not in the current directory", file)
 		}
 		rel = filepath.ToSlash(rel)
-		page := pageName(rel)
-		if other, ok := pages[page]; ok {
+		pageFile := pageName(rel)
+		if other, ok := pages[pageFile]; ok {
 			if other == rel {
 				continue
 			}
-			return fmt.Errorf("%s and %s would both be written to %s", other, rel, page)
+			return fmt.Errorf("%s and %s would both be written to %s", other, rel, pageFile)
 		}
-		pages[page] = rel
+		pages[pageFile] = rel
 		docs = append(docs, rel)
 	}
 
@@ -173,8 +173,8 @@ func (e *exporter) exportDoc(rel string) error {
 		return err
 	}
 
-	page := pageName(rel)
-	e.root = strings.Repeat("../", strings.Count(page, "/"))
+	pageFile := pageName(rel)
+	e.root = strings.Repeat("../", strings.Count(pageFile, "/"))
 	data := newPageData(doc, rel)
 	data.InlineFonts = true
 	if e.source && path.Ext(rel) == ".slide" {
@@ -195,7 +195,7 @@ func (e *exporter) exportDoc(rel string) error {
 	if err := data.Template.ExecuteTemplate(&buf, "root", data); err != nil {
 		return err
 	}
-	dst := filepath.Join(e.out, filepath.FromSlash(page))
+	dst := filepath.Join(e.out, filepath.FromSlash(pageFile))
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
