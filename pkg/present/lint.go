@@ -364,7 +364,7 @@ func (l *linter) code(n int, line string) {
 		l.report(n, "highlight", Warning, "HL%s marks no line: no line of %s ends in // HL%s", highlight, file, highlight)
 	}
 
-	if args[1] == "play" && !slices.Contains(playExts, filepath.Ext(file)) && !bytes.HasPrefix(data, []byte("#!")) {
+	if args[1] == "play" && !slices.Contains(playExts, filepath.Ext(file)) && !bytes.HasPrefix(bytes.TrimSpace(data), []byte("#!")) {
 		l.report(n, "play-language", Warning, "%s is run as Go: .play runs %s files as their language, and others as Go unless they start with #!", file, strings.Join(playExts, ", "))
 	}
 }

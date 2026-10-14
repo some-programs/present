@@ -18,6 +18,7 @@ func TestLint(t *testing.T) {
 		"main.go":    "package main\n\n// START OMIT\nfunc main() {\n\tprintln() // HLmain\n}\n// START OMIT\n",
 		"script.rb":  "puts 1\n",
 		"script.sh":  "#!/bin/sh\necho 1\n",
+		"blank.sh":   "\n#!/bin/sh\necho 1\n",
 		"image.png":  "",
 		"frame.html": "<p>frame</p>\n",
 	} {
@@ -40,6 +41,7 @@ October 9, 2026
 .code main.go /^package/ HLmain
 .play script.rb
 .play script.sh
+.play blank.sh
 .html frame.html
 .iframe https://example.com 300 400
 .background missing.jpg
@@ -72,12 +74,12 @@ code
 		"11: code-address",
 		"12: highlight: HLother marks no line: no line of main.go",
 		"14: play-language: script.rb is run as Go",
-		"18: missing-file: missing.jpg does not exist",
-		"20: duplicate-id: the heading on line 4",
-		"22: heading-space",
-		"23: note-space",
-		"24: notes-block",
-		"26: empty-link",
+		"19: missing-file: missing.jpg does not exist",
+		"21: duplicate-id: the heading on line 4",
+		"23: heading-space",
+		"24: note-space",
+		"25: notes-block",
+		"27: empty-link",
 	}
 	var got []string
 	for _, p := range Lint(name, []byte(src)) {
