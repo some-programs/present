@@ -158,7 +158,7 @@ func commandFiles(lines []present.Line, fsys fs.FS, docFile, urlPath string) []s
 			if len(rest) > 0 {
 				name = rest[0]
 			}
-			_, text = diagramTools[path.Ext(name)]
+			text = present.IsDiagram(name)
 		case ".background", ".video", ".iframe":
 		default:
 			continue

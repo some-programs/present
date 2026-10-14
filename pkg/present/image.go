@@ -6,6 +6,7 @@ package present
 
 import (
 	"fmt"
+	"maps"
 	"path"
 	"regexp"
 	"slices"
@@ -53,12 +54,39 @@ type Image struct {
 	Missing bool
 }
 
-// diagramExts are the extensions of the diagram files that an image can be
-// made from.
-var diagramExts = []string{".dot", ".mmd", ".mermaid", ".puml", ".plantuml", ".pu"}
+// A DiagramType is a type of diagram file that an image can be made from,
+// named for the tool that renders it.
+type DiagramType string
 
-// mermaidExts are the extensions of the diagram files rendered by Mermaid.
-var mermaidExts = []string{".mmd", ".mermaid"}
+const (
+	DiagramDot      DiagramType = "dot"      // Graphviz, rendered by dot
+	DiagramMermaid  DiagramType = "mermaid"  // rendered by mmdc
+	DiagramPlantUML DiagramType = "plantuml" // rendered by plantuml
+)
+
+// diagramTypes maps the extensions of diagram files to their types.
+var diagramTypes = map[string]DiagramType{
+	".dot":      DiagramDot,
+	".mmd":      DiagramMermaid,
+	".mermaid":  DiagramMermaid,
+	".puml":     DiagramPlantUML,
+	".plantuml": DiagramPlantUML,
+	".pu":       DiagramPlantUML,
+}
+
+// DiagramTypeOf returns the type of diagram that the file name is, by its
+// extension, or "" if it is not a diagram that an image can be made from.
+func DiagramTypeOf(name string) DiagramType { return diagramTypes[path.Ext(name)] }
+
+// DiagramTypes returns the types of diagram that DiagramTypeOf returns,
+// sorted.
+func DiagramTypes() []DiagramType {
+	return slices.Compact(slices.Sorted(maps.Values(diagramTypes)))
+}
+
+// IsDiagram reports whether the file name is, by its extension, a diagram
+// that an image can be made from.
+func IsDiagram(name string) bool { return DiagramTypeOf(name) != "" }
 
 // cssColor matches the CSS colors that -background-color accepts, such as
 // transparent, #f8f8f8 and rgb(0,0,0,0.5), written without spaces.
@@ -87,11 +115,11 @@ func parseImage(_ *Context, fileName string, lineno int, text string) (Elem, err
 	}
 	img.URL = args[1]
 	ext := path.Ext(img.URL)
-	if slices.Contains(diagramExts, ext) && !strings.Contains(img.URL, "://") {
+	if IsDiagram(img.URL) && !strings.Contains(img.URL, "://") {
 		img.Source = img.URL
 		img.URL = strings.TrimSuffix(img.URL, ext) + ".svg"
 	}
-	if img.BackgroundColor != "" && (img.Source == "" || !slices.Contains(mermaidExts, ext)) {
+	if img.BackgroundColor != "" && (img.Source == "" || DiagramTypeOf(img.Source) != DiagramMermaid) {
 		return nil, fmt.Errorf("%s:%d: incorrect image invocation: %q: -background-color is only for Mermaid diagrams (.mmd, .mermaid)", fileName, lineno, text)
 	}
 	var err error

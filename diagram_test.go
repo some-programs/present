@@ -6,11 +6,28 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/some-programs/present/pkg/present"
 )
+
+// TestDiagramTools checks that every type of diagram that package present
+// knows has a tool, and every tool a type.
+func TestDiagramTools(t *testing.T) {
+	types := present.DiagramTypes()
+	for _, typ := range types {
+		if diagramTools[typ] == nil {
+			t.Errorf("no tool renders %s diagrams", typ)
+		}
+	}
+	for typ := range diagramTools {
+		if !slices.Contains(types, typ) {
+			t.Errorf("present.DiagramTypes does not list %s", typ)
+		}
+	}
+}
 
 func TestRenderDiagram(t *testing.T) {
 	dir := t.TempDir()
@@ -303,7 +320,7 @@ func TestExampleDiagrams(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			stamp := diagramStamp(diagramTools[path.Ext(img.Source)], img.BackgroundColor, source)
+			stamp := diagramStamp(diagramTools[present.DiagramTypeOf(img.Source)], img.BackgroundColor, source)
 			if !bytes.Contains(svg, stamp) {
 				t.Errorf("%s: %s is not a rendering of %s; render it again", name, img.URL, img.Source)
 			}

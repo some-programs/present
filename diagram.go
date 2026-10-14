@@ -28,7 +28,7 @@ var (
 	plantumlCmd = serveFlags.String("plantuml", "plantuml", "PlantUML command that renders the .puml, .plantuml and .pu files of .image commands to SVG; empty shows their existing .svg files as they are")
 )
 
-// A diagramTool renders diagram files of one kind to SVG.
+// A diagramTool renders diagram files of one type to SVG.
 type diagramTool struct {
 	// name is the name of the flag that sets cmd, also used in the stamp
 	// that marks its renderings.
@@ -69,14 +69,11 @@ var (
 	}
 )
 
-// diagramTools maps the extensions of diagram files to their tools.
-var diagramTools = map[string]*diagramTool{
-	".dot":      dotTool,
-	".mmd":      mmdcTool,
-	".mermaid":  mmdcTool,
-	".puml":     plantumlTool,
-	".plantuml": plantumlTool,
-	".pu":       plantumlTool,
+// diagramTools maps the types of diagram to their tools.
+var diagramTools = map[present.DiagramType]*diagramTool{
+	present.DiagramDot:      dotTool,
+	present.DiagramMermaid:  mmdcTool,
+	present.DiagramPlantUML: plantumlTool,
 }
 
 // diagramMu serializes rendering, since the slides and the notes window
@@ -164,7 +161,7 @@ func renderDiagram(root contentRoot, src, out, bg string) (svg []byte, err error
 	defer diagramMu.Unlock()
 
 	old, _ := fs.ReadFile(root.fsys, out)
-	tool := diagramTools[path.Ext(src)]
+	tool := diagramTools[present.DiagramTypeOf(src)]
 	if tool == nil {
 		return old, fmt.Errorf("%s: no tool renders %s files", src, path.Ext(src))
 	}
