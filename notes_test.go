@@ -9,7 +9,8 @@ import (
 )
 
 func TestRenderNotes(t *testing.T) {
-	if err := initTemplates(embedFS, func(path string) string { return path }, pageSettings{}); err != nil {
+	pr, err := newRenderer(embedFS, func(path string) string { return path }, pageSettings{})
+	if err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
@@ -53,7 +54,7 @@ Nothing to say.
 `,
 	})
 	var buf bytes.Buffer
-	if err := renderNotes(&buf, os.DirFS(dir), "x.slide"); err != nil {
+	if err := renderNotes(&buf, pr, os.DirFS(dir), "x.slide"); err != nil {
 		t.Fatal(err)
 	}
 

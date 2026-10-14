@@ -47,3 +47,13 @@ func docFiles(paths []string, recursive bool) ([]string, error) {
 	}
 	return files, nil
 }
+
+// isDoc reports whether the file name is a slide presentation or an
+// article.
+func isDoc(name string) bool {
+	switch filepath.Ext(name) {
+	case ".slide", ".article":
+		return true
+	}
+	return false
+}

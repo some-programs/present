@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/some-programs/present/pkg/present"
@@ -30,13 +29,13 @@ func init() {
 func dirHandler(w http.ResponseWriter, r *http.Request) {
 	root, name := contentFile(r.URL.Path)
 	if isDoc(name) {
-		render := func(w io.Writer) error { return renderDoc(w, root, name, r.URL.Path) }
+		render := func(w io.Writer) error { return renderDoc(w, serveRenderer, root, name, r.URL.Path) }
 		if r.URL.Query().Has("notes") {
 			if !*notesFlag || path.Ext(name) != ".slide" {
 				http.NotFound(w, r)
 				return
 			}
-			render = func(w io.Writer) error { return renderNotes(w, root.fsys, name) }
+			render = func(w io.Writer) error { return renderNotes(w, serveRenderer, root.fsys, name) }
 		}
 		var buf bytes.Buffer
 		if err := render(&buf); err != nil {
@@ -79,95 +78,17 @@ func serveError(w http.ResponseWriter, r *http.Request, name string, err error) 
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-// isDoc reports whether the file name is a slide presentation or an
-// article.
-func isDoc(name string) bool {
-	switch filepath.Ext(name) {
-	case ".slide", ".article":
-		return true
-	}
-	return false
-}
-
 var (
-	// dirListTemplate holds the front page template.
+	// dirListTemplate holds the front page template, for serve.
 	dirListTemplate *template.Template
 
-	// contentTemplate maps the presentable file extensions to the
-	// template to be executed.
-	contentTemplate map[string]*template.Template
-
-	// contentSettings are the settings of the pages that contentTemplate
-	// executes.
-	contentSettings pageSettings
+	// serveRenderer renders the pages that serve serves.
+	serveRenderer *renderer
 )
 
-// pageSettings are the settings of the pages of presentations and articles,
-// which serve takes from its flags, and export sets.
-type pageSettings struct {
-	Play        bool // code of .play can be run
-	Notes       bool // the presenter notes window can be opened
-	Preload     bool // media are preloaded
-	InlineFonts bool // fonts.css holds the fonts, so they are not preloaded
-	ThankYou    bool // end slides with a "Thank you" slide
-	Hot         bool // reload the page when its files change
-}
-
-// initTemplates parses the templates in fsys, for pages with the settings
-// s. Templates link to static resources through staticURL, which maps a
-// path such as "/static/styles.css" to the URL to serve it at.
-func initTemplates(fsys fs.FS, staticURL func(path string) string, s pageSettings) error {
-	contentSettings = s
-	// Locate the template file.
-	actionTmpl := "templates/action.tmpl"
-
-	contentTemplate = make(map[string]*template.Template)
-
-	for ext, contentTmpl := range map[string]string{
-		".slide":   "slides.tmpl",
-		".article": "article.tmpl",
-	} {
-		contentTmpl = "templates/" + contentTmpl
-
-		// Read and parse the input.
-		tmpl := present.Template()
-		tmpl = tmpl.Funcs(template.FuncMap{
-			"playable":     func(c present.Code) bool { return s.Play && c.Play },
-			"sectionNotes": sectionNotes,
-			"static":       staticURL,
-		})
-		if _, err := tmpl.ParseFS(fsys, actionTmpl, contentTmpl); err != nil {
-			return err
-		}
-		contentTemplate[ext] = tmpl
-	}
-
-	var err error
-	dirListTemplate, err = template.New("dir.tmpl").
-		Funcs(template.FuncMap{
-			"static": staticURL,
-			"doc":    func() bool { return *showDoc },
-		}).
-		ParseFS(fsys, "templates/dir.tmpl")
-	return err
-}
-
-// pageData is what the templates of presentations and articles are
-// executed with: what present.Doc.Render passes them, the settings of the
-// page, and with -doc, or export -source, the source of each slide.
-type pageData struct {
-	*present.Doc
-	Template *template.Template
-	pageSettings
-
-	SourceFile string        // the presentation file, as sourceFileName names it
-	Sources    []slideSource // the source of each slide, with -doc or export -source
-}
-
 // renderDoc reads the present file docFile in root, served at the URL path
-// urlPath, gets its template representation, and executes the template,
-// sending output to w.
-func renderDoc(w io.Writer, root contentRoot, docFile, urlPath string) error {
+// urlPath, and writes its page, rendered by pr, to w.
+func renderDoc(w io.Writer, pr *renderer, root contentRoot, docFile, urlPath string) error {
 	// Read the input and build the doc structure.
 	src, err := fs.ReadFile(root.fsys, docFile)
 	if err != nil {
@@ -179,50 +100,37 @@ func renderDoc(w io.Writer, root contentRoot, docFile, urlPath string) error {
 	}
 	renderDiagrams(doc, root, docFile)
 
-	data := newPageData(doc, docFile)
+	var sourceFile string
+	var sources []slideSource
 	if *showDoc && path.Ext(docFile) == ".slide" {
-		data.SourceFile = sourceFileName(urlPath)
-		data.Sources, err = slideSources(doc, src, root.fsys, docFile, urlPath)
-		if err != nil {
+		sourceFile = sourceFileName(urlPath)
+		if sources, err = slideSources(doc, src, root.fsys, docFile, urlPath); err != nil {
 			return err
 		}
 	}
-
-	// Execute the template.
-	return data.Template.ExecuteTemplate(w, "root", data)
+	return pr.page(w, doc, docFile, sourceFile, sources)
 }
 
-// newPageData returns the data to execute the template for doc, read from
-// docFile, with.
-func newPageData(doc *present.Doc, docFile string) pageData {
-	return pageData{
-		Doc:          doc,
-		Template:     contentTemplate[path.Ext(docFile)],
-		pageSettings: contentSettings,
-	}
-}
-
-// renderNotes renders the presenter notes window of the slide
-// presentation docFile in fsys, with the notes of every slide. The
-// presentation's own window shows itself in it.
-func renderNotes(w io.Writer, fsys fs.FS, docFile string) error {
+// renderNotes writes the presenter notes window of the slide presentation
+// docFile in fsys, rendered by pr, to w. The presentation's own window
+// shows itself in it.
+func renderNotes(w io.Writer, pr *renderer, fsys fs.FS, docFile string) error {
 	doc, err := parseFile(fsys, docFile, 0)
 	if err != nil {
 		return err
 	}
-	return contentTemplate[".slide"].ExecuteTemplate(w, "notes", doc)
+	return pr.notes(w, doc)
 }
 
-// sectionNotes returns the notes of the slide s, including those of its
-// subsections.
-func sectionNotes(s present.Section) []string {
-	notes := slices.Clone(s.Notes)
-	for _, e := range s.Elem {
-		if sub, ok := e.(present.Section); ok {
-			notes = append(notes, sectionNotes(sub)...)
-		}
-	}
-	return notes
+// parseDirList parses the template of directory listings in fsys, which
+// links to static resources through staticURL.
+func parseDirList(fsys fs.FS, staticURL func(path string) string) (*template.Template, error) {
+	return template.New("dir.tmpl").
+		Funcs(template.FuncMap{
+			"static": staticURL,
+			"doc":    func() bool { return *showDoc },
+		}).
+		ParseFS(fsys, "templates/dir.tmpl")
 }
 
 // dirList scans the given path in fsys, served at the URL path urlPath,

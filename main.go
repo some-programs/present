@@ -140,13 +140,17 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		}
 		return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
 	}
-	err := initTemplates(fsys, staticURL, pageSettings{
+	var err error
+	serveRenderer, err = newRenderer(fsys, staticURL, pageSettings{
 		Play:     *playFlag,
 		Notes:    *notesFlag,
 		Preload:  !*noPreloadFlag,
 		ThankYou: *thankYouFlag,
 		Hot:      *hot,
 	})
+	if err == nil {
+		dirListTemplate, err = parseDirList(fsys, staticURL)
+	}
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %v", err)
 	}

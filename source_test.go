@@ -109,14 +109,15 @@ func TestSourceFileName(t *testing.T) {
 }
 
 func TestRenderDocSource(t *testing.T) {
-	if err := initTemplates(embedFS, func(path string) string { return path }, pageSettings{}); err != nil {
+	pr, err := newRenderer(embedFS, func(path string) string { return path }, pageSettings{})
+	if err != nil {
 		t.Fatal(err)
 	}
 	defer func(old bool) { *showDoc = old }(*showDoc)
 	for _, doc := range []bool{false, true} {
 		*showDoc = doc
 		var buf bytes.Buffer
-		if err := renderDoc(&buf, examplesRoot, "intro.slide", "/_examples/intro.slide"); err != nil {
+		if err := renderDoc(&buf, pr, examplesRoot, "intro.slide", "/_examples/intro.slide"); err != nil {
 			t.Fatal(err)
 		}
 		page := buf.String()

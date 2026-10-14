@@ -73,6 +73,9 @@ type exporter struct {
 	source bool // include the sources of slides, as -doc does for serve
 	stdout io.Writer
 	faces  []fontFace // embedded in SVG files
+	// renderer renders the pages, with export's settings, linking to
+	// static files from root.
+	renderer *renderer
 	// root is the relative URL of out from the page being written, which
 	// static files are linked to by.
 	root string
@@ -98,7 +101,7 @@ func exportDocs(out string, files []string, source bool, stdout io.Writer) error
 	staticURL := func(p string) string { return e.root + strings.TrimPrefix(p, "/") }
 	// Code cannot be run on the pages, and they have no presenter notes.
 	settings := pageSettings{Preload: true, InlineFonts: true, ThankYou: *thankYouFlag}
-	if err := initTemplates(embedFS, staticURL, settings); err != nil {
+	if e.renderer, err = newRenderer(embedFS, staticURL, settings); err != nil {
 		return err
 	}
 	if e.faces, err = loadFontFaces(embedFS); err != nil {
@@ -174,14 +177,12 @@ func (e *exporter) exportDoc(rel string) error {
 
 	pageFile := pageName(rel)
 	e.root = strings.Repeat("../", strings.Count(pageFile, "/"))
-	data := newPageData(doc, rel)
+	var sources []slideSource
 	if e.source && path.Ext(rel) == ".slide" {
-		data.SourceFile = rel
-		data.Sources, err = slideSources(doc, src, e.files.fsys, rel, "/"+rel)
-		if err != nil {
+		if sources, err = slideSources(doc, src, e.files.fsys, rel, "/"+rel); err != nil {
 			return err
 		}
-		for _, s := range data.Sources {
+		for _, s := range sources {
 			for i := range s.Files {
 				if s.Files[i].URL, err = e.link(rel, s.Files[i].Name); err != nil {
 					return err
@@ -190,7 +191,7 @@ func (e *exporter) exportDoc(rel string) error {
 		}
 	}
 	var buf bytes.Buffer
-	if err := data.Template.ExecuteTemplate(&buf, "root", data); err != nil {
+	if err := e.renderer.page(&buf, doc, rel, rel, sources); err != nil {
 		return err
 	}
 	dst := filepath.Join(e.out, filepath.FromSlash(pageFile))
