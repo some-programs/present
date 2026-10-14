@@ -66,7 +66,6 @@ func main() { // HLfunc
 			cmd:        ".code main.go",
 			Ext:        ".go",
 			FileName:   "main.go",
-			Raw:        helloTest,
 			Text:       helloTestHTML,
 		},
 		{
@@ -77,7 +76,6 @@ func main() { // HLfunc
 			Ext:        ".go",
 			FileName:   "main.go",
 			Play:       true,
-			Raw:        helloTest,
 			Text:       helloTestHTML,
 		},
 		{
@@ -87,7 +85,6 @@ func main() { // HLfunc
 			cmd:        ".code main.go",
 			Ext:        ".go",
 			FileName:   "main.go",
-			Raw:        helloTestHL,
 			Text:       highlight(helloTestHTML, "fmt.Println(&#34;hello, test&#34;)"),
 		},
 		{
@@ -98,7 +95,6 @@ func main() { // HLfunc
 			Ext:        ".go",
 			FileName:   "main.go",
 			Play:       false,
-			Raw:        []byte("package main\n\nimport \"fmt\" // HLimport\n\nfunc main() { // HLfunc\n\tfmt.Println(\"hello, test\") // HL\n}"),
 			Text:       highlight(helloTestHTML, "func main() {"),
 		},
 		{
@@ -123,7 +119,6 @@ func main() { // HLfunc
 			Ext:        ".go",
 			FileName:   "main.go",
 			Play:       false,
-			Raw:        []byte("func main() {\n\tfmt.Println(\"hello, test\")\n}"),
 			Text:       "<pre><span num=\"6\">func main() {</span>\n<span num=\"7\">    fmt.Println(&#34;hello, test&#34;)</span>\n<span num=\"8\">}</span>\n</pre>",
 		},
 		{
@@ -134,7 +129,6 @@ func main() { // HLfunc
 			Ext:        ".go",
 			FileName:   "main.go",
 			Play:       false,
-			Raw:        []byte("func main() {"),
 			Text:       "<pre><span num=\"6\">func main() {</span>\n</pre>",
 		},
 		{
@@ -151,7 +145,6 @@ func main() { // HLfunc
 			cmd:        ".code -numbers main.go",
 			Ext:        ".go",
 			FileName:   "main.go",
-			Raw:        helloTest,
 			// Replacing the first "<pre>"
 			Text: "<pre class=\"numbers\">" + helloTestHTML[6:],
 		},
@@ -162,13 +155,11 @@ func main() { // HLfunc
 			cmd:        ".code -edit main.go",
 			Ext:        ".go",
 			FileName:   "main.go",
-			Raw:        helloTest,
 			Text:       "<pre contenteditable=\"true\" spellcheck=\"false\">" + helloTestHTML[6:],
 		},
 	}
 
 	trimHTML := func(t template.HTML) string { return strings.TrimSpace(string(t)) }
-	trimBytes := func(b []byte) string { return strings.TrimSpace(string(b)) }
 
 	for _, tt := range tests {
 		ctx := &Context{tt.readFile}
@@ -198,9 +189,6 @@ func main() { // HLfunc
 		}
 		if c.Play != tt.Play {
 			t.Errorf("%s: expected Play %v; got %v", tt.name, tt.Play, c.Play)
-		}
-		if got, wants := trimBytes(c.Raw), trimBytes(tt.Raw); got != wants {
-			t.Errorf("%s: expected Raw \n%q\n; got \n%q\n", tt.name, wants, got)
 		}
 		if got, wants := trimHTML(c.Text), trimHTML(tt.Text); got != wants {
 			t.Errorf("%s: expected Text \n%q\n; got \n%q\n", tt.name, wants, got)

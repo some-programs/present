@@ -43,7 +43,6 @@ type Code struct {
 	Edit     bool   // editable code
 	FileName string // file name
 	Ext      string // file extension
-	Raw      []byte // content of the file
 }
 
 func (c Code) TemplateName() string { return "code" }
@@ -142,7 +141,6 @@ func parseCode(ctx *Context, sourceFile string, sourceLine int, cmd string) (Ele
 		Edit:     data.Edit,
 		FileName: filepath.Base(filename),
 		Ext:      filepath.Ext(filename),
-		Raw:      rawCode(lines),
 	}, nil
 }
 
@@ -164,17 +162,6 @@ func formatLines(lines []codeLine, highlight string) []codeLine {
 		formatted[i] = line
 	}
 	return formatted
-}
-
-// rawCode returns the code represented by the given codeLines without any kind
-// of formatting.
-func rawCode(lines []codeLine) []byte {
-	b := new(bytes.Buffer)
-	for _, line := range lines {
-		b.WriteString(line.L)
-		b.WriteByte('\n')
-	}
-	return b.Bytes()
 }
 
 type codeTemplateData struct {
