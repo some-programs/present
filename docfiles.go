@@ -36,8 +36,7 @@ func docFiles(paths []string, recursive bool) ([]string, error) {
 				}
 				return nil
 			}
-			switch filepath.Ext(path) {
-			case ".slide", ".article":
+			if isDoc(path) {
 				files = append(files, path)
 			}
 			return nil

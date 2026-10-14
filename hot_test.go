@@ -92,10 +92,6 @@ func TestHotHandler(t *testing.T) {
 	old := hotInterval
 	hotInterval = 10 * time.Millisecond
 	t.Cleanup(func() { hotInterval = old })
-	// isDoc knows the presentation extensions from the templates.
-	if err := initTemplates(embedFS, func(path string) string { return path }); err != nil {
-		t.Fatal(err)
-	}
 
 	writeFiles(t, dir, map[string]string{
 		"x.slide": "# Talk\n\n## One\n\n.code a.go\n",

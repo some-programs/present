@@ -79,9 +79,14 @@ func serveError(w http.ResponseWriter, r *http.Request, name string, err error) 
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func isDoc(path string) bool {
-	_, ok := contentTemplate[filepath.Ext(path)]
-	return ok
+// isDoc reports whether the file name is a slide presentation or an
+// article.
+func isDoc(name string) bool {
+	switch filepath.Ext(name) {
+	case ".slide", ".article":
+		return true
+	}
+	return false
 }
 
 var (
