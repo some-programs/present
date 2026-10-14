@@ -46,13 +46,13 @@ func TestExport(t *testing.T) {
 
 ## Code
 
-.play prog.go
+.play prog.go /^func main/
 
 ## Links
 
 [Other](../other.article#TOC_1.) and [Go](https://go.dev/x.slide)
 `,
-		"talk/prog.go":       "package main\n\nfunc main() {}\n",
+		"talk/prog.go":       "package main\n\nimport \"os\" // OMIT\n\nfunc main() {}\n",
 		"talk/bg.jpg":        "jpg",
 		"talk/pic one.png":   "png",
 		"talk/clip.mp4":      "mp4",
@@ -135,7 +135,8 @@ func TestExport(t *testing.T) {
 			t.Errorf("talk/x.html does not contain %s", want)
 		}
 	}
-	for _, bad := range []string{`'/static/`, "code playground", "play.js", "hot.js", "woff2", "module", "Press 'S'"} {
+	// The code around a .play snippet is only for running it.
+	for _, bad := range []string{`'/static/`, "code playground", "play.js", "hot.js", "woff2", "module", "Press 'S'", "display: none", "OMIT"} {
 		if bytes.Contains(page, []byte(bad)) {
 			t.Errorf("talk/x.html contains %s", bad)
 		}

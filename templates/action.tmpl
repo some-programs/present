@@ -18,8 +18,14 @@ It determines how the formatting actions are rendered.
   </p>
 {{end}}
 
+{{/* The hidden code of .play runs with the snippet. Nothing comes between
+     the pre elements, since play.js reads the program from them. */}}
 {{define "code"}}
-  <div class="code{{if playable .}} playground{{end}}"{{if playable .}} data-ext="{{.Ext}}"{{end}} {{if .Edit}}contenteditable="true" spellcheck="false"{{end}}>{{.Text}}</div>
+  <div class="code{{if playable .}} playground{{end}}"{{if playable .}} data-ext="{{.Ext}}"{{end}} {{if .Edit}}contenteditable="true" spellcheck="false"{{end}}>
+  {{- if playable .}}{{with .Prefix}}<pre style="display: none"><span>{{.}}</span></pre>{{end}}{{end -}}
+  {{.Text}}
+  {{- if playable .}}{{with .Suffix}}<pre style="display: none"><span>{{.}}</span></pre>{{end}}{{end -}}
+  </div>
 {{end}}
 
 {{define "image"}}

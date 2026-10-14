@@ -37,12 +37,16 @@ func init() {
 }
 
 type Code struct {
-	Cmd      string // original command from present source
-	Text     template.HTML
-	Play     bool   // runnable code
-	Edit     bool   // editable code
-	FileName string // file name
-	Ext      string // file extension
+	Cmd      string        // original command from present source
+	Text     template.HTML // the snippet, as a pre element
+	Play     bool          // a .play command, whose code can be run
+	Edit     bool          // editable code
+	FileName string        // file name
+	Ext      string        // file extension
+
+	// Prefix and Suffix are the code of the file before and after the
+	// snippet, with .play. The page hides them, and runs them with it.
+	Prefix, Suffix string
 }
 
 func (c Code) TemplateName() string { return "code" }
@@ -87,7 +91,7 @@ func parseCode(ctx *Context, sourceFile string, sourceLine int, cmd string) (Ele
 		return nil, fmt.Errorf("%s:%d: syntax error for .code/.play invocation", sourceFile, sourceLine)
 	}
 	command, flags, file, addr := args[1], args[2], args[3], strings.TrimSpace(args[4])
-	play := command == "play" && PlayEnabled
+	play := command == "play"
 
 	// Read in code file and (optionally) match address.
 	filename := filepath.Join(filepath.Dir(sourceFile), file)
@@ -124,24 +128,22 @@ func parseCode(ctx *Context, sourceFile string, sourceLine int, cmd string) (Ele
 		Numbers: strings.Contains(flags, "-numbers"),
 	}
 
-	// Include before and after in a hidden span for playground code.
-	if play {
-		data.Prefix = textBytes[:lo]
-		data.Suffix = textBytes[hi:]
-	}
-
 	var buf bytes.Buffer
 	if err := codeTemplate.Execute(&buf, data); err != nil {
 		return nil, err
 	}
-	return Code{
+	c := Code{
 		Cmd:      origCmd,
 		Text:     template.HTML(buf.String()),
 		Play:     play,
 		Edit:     data.Edit,
 		FileName: filepath.Base(filename),
 		Ext:      filepath.Ext(filename),
-	}, nil
+	}
+	if play {
+		c.Prefix, c.Suffix = string(textBytes[:lo]), string(textBytes[hi:])
+	}
+	return c, nil
 }
 
 // formatLines returns a new slice of codeLine with the given lines
@@ -165,9 +167,8 @@ func formatLines(lines []codeLine, highlight string) []codeLine {
 }
 
 type codeTemplateData struct {
-	Lines          []codeLine
-	Prefix, Suffix []byte
-	Edit, Numbers  bool
+	Lines         []codeLine
+	Edit, Numbers bool
 }
 
 var leadingSpaceRE = regexp.MustCompile(`^[ \t]*`)
@@ -177,20 +178,14 @@ var codeTemplate = template.Must(template.New("code").Funcs(template.FuncMap{
 	"leadingSpace": leadingSpaceRE.FindString,
 }).Parse(codeTemplateHTML))
 
-// codeTemplateHTML puts no text between the pre elements: the playground
-// script reads the program back from the DOM, and stray newlines there
-// would end up in it.
-const codeTemplateHTML = `
-{{- with .Prefix}}<pre style="display: none"><span>{{printf "%s" .}}</span></pre>{{end -}}
-
-<pre{{if .Edit}} contenteditable="true" spellcheck="false"{{end}}{{if .Numbers}} class="numbers"{{end}}>
+// codeTemplateHTML has no space around the pre element, since the "code"
+// template puts the hidden Prefix and Suffix of .play right next to it.
+const codeTemplateHTML = `<pre{{if .Edit}} contenteditable="true" spellcheck="false"{{end}}{{if .Numbers}} class="numbers"{{end}}>
 	{{- range .Lines}}<span num="{{.N}}">
 	{{- if .HL}}{{leadingSpace .L}}<b>{{trimSpace .L}}</b>
 	{{- else}}{{.L}}{{end -}}
 </span>
-{{end}}</pre>
-{{- with .Suffix}}<pre style="display: none"><span>{{printf "%s" .}}</span></pre>{{end -}}
-`
+{{end}}</pre>`
 
 // codeLine represents a line of code extracted from a source file.
 type codeLine struct {

@@ -12,10 +12,6 @@ import (
 )
 
 func TestParseCode(t *testing.T) {
-	// Enable play but revert the change at the end.
-	defer func(play bool) { PlayEnabled = play }(PlayEnabled)
-	PlayEnabled = true
-
 	helloTest := []byte(`
 package main
 
@@ -132,6 +128,18 @@ func main() { // HLfunc
 			Text:       "<pre><span num=\"6\">func main() {</span>\n</pre>",
 		},
 		{
+			name:       "play just func main",
+			readFile:   read(helloTest, nil),
+			sourceFile: "main.go",
+			cmd:        ".play main.go /func main/",
+			Ext:        ".go",
+			FileName:   "main.go",
+			Play:       true,
+			Text:       "<pre><span num=\"6\">func main() {</span>\n</pre>",
+			Prefix:     "\npackage main\n\nimport \"fmt\"\n\n",
+			Suffix:     "\tfmt.Println(\"hello, test\")\n}\n",
+		},
+		{
 			name:       "bad address",
 			readFile:   read(helloTest, nil),
 			sourceFile: "main.go",
@@ -189,6 +197,9 @@ func main() { // HLfunc
 		}
 		if c.Play != tt.Play {
 			t.Errorf("%s: expected Play %v; got %v", tt.name, tt.Play, c.Play)
+		}
+		if c.Prefix != tt.Prefix || c.Suffix != tt.Suffix {
+			t.Errorf("%s: expected Prefix %q and Suffix %q; got %q and %q", tt.name, tt.Prefix, tt.Suffix, c.Prefix, c.Suffix)
 		}
 		if got, wants := trimHTML(c.Text), trimHTML(tt.Text); got != wants {
 			t.Errorf("%s: expected Text \n%q\n; got \n%q\n", tt.name, wants, got)
