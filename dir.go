@@ -32,7 +32,7 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	if isDoc(name) {
 		render := func(w io.Writer) error { return renderDoc(w, root, name, r.URL.Path) }
 		if r.URL.Query().Has("notes") {
-			if !present.NotesEnabled || path.Ext(name) != ".slide" {
+			if !*notes || path.Ext(name) != ".slide" {
 				http.NotFound(w, r)
 				return
 			}
@@ -96,12 +96,28 @@ var (
 	// contentTemplate maps the presentable file extensions to the
 	// template to be executed.
 	contentTemplate map[string]*template.Template
+
+	// contentSettings are the settings of the pages that contentTemplate
+	// executes.
+	contentSettings pageSettings
 )
 
-// initTemplates parses the templates in fsys. Templates link to static
-// resources through staticURL, which maps a path such as
-// "/static/styles.css" to the URL to serve it at.
-func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
+// pageSettings are the settings of the pages of presentations and articles,
+// which serve takes from its flags, and export sets.
+type pageSettings struct {
+	Play        bool // code of .play can be run
+	Notes       bool // the presenter notes window can be opened
+	Preload     bool // media are preloaded
+	InlineFonts bool // fonts.css holds the fonts, so they are not preloaded
+	ThankYou    bool // end slides with a "Thank you" slide
+	Hot         bool // reload the page when its files change
+}
+
+// initTemplates parses the templates in fsys, for pages with the settings
+// s. Templates link to static resources through staticURL, which maps a
+// path such as "/static/styles.css" to the URL to serve it at.
+func initTemplates(fsys fs.FS, staticURL func(path string) string, s pageSettings) error {
+	contentSettings = s
 	// Locate the template file.
 	actionTmpl := "templates/action.tmpl"
 
@@ -116,7 +132,7 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 		// Read and parse the input.
 		tmpl := present.Template()
 		tmpl = tmpl.Funcs(template.FuncMap{
-			"playable":     playable,
+			"playable":     func(c present.Code) bool { return s.Play && c.Play },
 			"sectionNotes": sectionNotes,
 			"static":       staticURL,
 		})
@@ -141,13 +157,8 @@ func initTemplates(fsys fs.FS, staticURL func(path string) string) error {
 // page, and with -doc, or export -source, the source of each slide.
 type pageData struct {
 	*present.Doc
-	Template       *template.Template
-	PlayEnabled    bool
-	NotesEnabled   bool
-	PreloadEnabled bool
-	InlineFonts    bool // fonts.css holds the fonts, so they are not preloaded
-	ThankYou       bool // end slides with a "Thank you" slide, with -thankyou
-	Hot            bool // reload the page when its files change, with -hot
+	Template *template.Template
+	pageSettings
 
 	SourceFile string        // the presentation file, as sourceFileName names it
 	Sources    []slideSource // the source of each slide, with -doc or export -source
@@ -185,13 +196,9 @@ func renderDoc(w io.Writer, root contentRoot, docFile, urlPath string) error {
 // docFile, with.
 func newPageData(doc *present.Doc, docFile string) pageData {
 	return pageData{
-		Doc:            doc,
-		Template:       contentTemplate[path.Ext(docFile)],
-		PlayEnabled:    present.PlayEnabled,
-		NotesEnabled:   present.NotesEnabled,
-		PreloadEnabled: present.PreloadEnabled,
-		ThankYou:       *thankYou,
-		Hot:            *hot,
+		Doc:          doc,
+		Template:     contentTemplate[path.Ext(docFile)],
+		pageSettings: contentSettings,
 	}
 }
 

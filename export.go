@@ -55,9 +55,6 @@ func export(args []string, stdout, stderr io.Writer) int {
 		flags.Usage()
 		return 2
 	}
-	present.PlayEnabled = false
-	present.NotesEnabled = false
-	present.PreloadEnabled = true
 	// Diagrams that cannot be rendered are logged.
 	log.SetFlags(0)
 	log.SetPrefix("present: ")
@@ -99,7 +96,9 @@ func exportDocs(out string, files []string, source bool, stdout io.Writer) error
 
 	e := &exporter{files: dirRoot("."), out: out, source: source, stdout: stdout, copied: make(map[string]bool)}
 	staticURL := func(p string) string { return e.root + strings.TrimPrefix(p, "/") }
-	if err := initTemplates(embedFS, staticURL); err != nil {
+	// Code cannot be run on the pages, and they have no presenter notes.
+	settings := pageSettings{Preload: true, InlineFonts: true, ThankYou: *thankYou}
+	if err := initTemplates(embedFS, staticURL, settings); err != nil {
 		return err
 	}
 	if e.faces, err = loadFontFaces(embedFS); err != nil {
@@ -176,7 +175,6 @@ func (e *exporter) exportDoc(rel string) error {
 	pageFile := pageName(rel)
 	e.root = strings.Repeat("../", strings.Count(pageFile, "/"))
 	data := newPageData(doc, rel)
-	data.InlineFonts = true
 	if e.source && path.Ext(rel) == ".slide" {
 		data.SourceFile = rel
 		data.Sources, err = slideSources(doc, src, e.files.fsys, rel, "/"+rel)

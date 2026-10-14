@@ -15,8 +15,8 @@
     <link rel='stylesheet' href='{{static "/static/fonts.css"}}'>
     <link rel='stylesheet' href='{{static "/static/styles.css"}}'>
     <script>
-      var notesEnabled = {{.NotesEnabled}};
-      var preloadEnabled = {{.PreloadEnabled}};
+      var notesEnabled = {{.Notes}};
+      var preloadEnabled = {{.Preload}};
     </script>
     {{if .Hot}}
     <script defer src='{{static "/static/js/hot.js"}}'></script>
@@ -101,12 +101,12 @@
     <div id="help">
       Use the left and right arrow keys or click the left and right
       edges of the page to navigate between slides.<br>
-      {{if .NotesEnabled}}Press 'N' to open the presenter notes.<br>{{end}}
+      {{if .Notes}}Press 'N' to open the presenter notes.<br>{{end}}
       {{if .Sources}}Press 'S' to show or hide the source of the slide.<br>{{end}}
       (Press 'H', navigate or click this message to hide it.)
     </div>
 
-    {{if .PlayEnabled}}
+    {{if .Play}}
     <script defer src='{{static "/static/js/playground.js"}}'></script>
     <script defer src='{{static "/static/js/play.js"}}'></script>
     {{end}}

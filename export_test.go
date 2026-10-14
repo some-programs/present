@@ -8,18 +8,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
-
-	"github.com/some-programs/present/pkg/present"
 )
 
-// runExport runs the export command with args, keeping the settings it
-// changes for the rest of the test only.
+// runExport runs the export command with args.
 func runExport(t *testing.T, args ...string) (code int, stdout, stderr string) {
 	t.Helper()
-	play, notes, preload := present.PlayEnabled, present.NotesEnabled, present.PreloadEnabled
-	t.Cleanup(func() {
-		present.PlayEnabled, present.NotesEnabled, present.PreloadEnabled = play, notes, preload
-	})
 	var out, errOut bytes.Buffer
 	code = runCommand("export", args, &out, &errOut)
 	return code, out.String(), errOut.String()

@@ -27,22 +27,9 @@ func Template() *template.Template {
 func (d *Doc) Render(w io.Writer, t *template.Template) error {
 	data := struct {
 		*Doc
-		Template       *template.Template
-		PlayEnabled    bool
-		NotesEnabled   bool
-		PreloadEnabled bool
-	}{d, t, PlayEnabled, NotesEnabled, PreloadEnabled}
+		Template *template.Template
+	}{d, t}
 	return t.ExecuteTemplate(w, "root", data)
-}
-
-// Render renders the section to the given writer using the provided template.
-func (s *Section) Render(w io.Writer, t *template.Template) error {
-	data := struct {
-		*Section
-		Template    *template.Template
-		PlayEnabled bool
-	}{s, t, PlayEnabled}
-	return t.ExecuteTemplate(w, "section", data)
 }
 
 type ParseFunc func(ctx *Context, fileName string, lineNumber int, inputLine string) (Elem, error)

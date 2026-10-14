@@ -109,7 +109,7 @@ func TestSourceFileName(t *testing.T) {
 }
 
 func TestRenderDocSource(t *testing.T) {
-	if err := initTemplates(embedFS, func(path string) string { return path }); err != nil {
+	if err := initTemplates(embedFS, func(path string) string { return path }, pageSettings{}); err != nil {
 		t.Fatal(err)
 	}
 	defer func(old bool) { *showDoc = old }(*showDoc)

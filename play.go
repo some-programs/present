@@ -9,18 +9,13 @@ import (
 	"net/url"
 
 	"github.com/some-programs/present/pkg/playground/socket"
-	"github.com/some-programs/present/pkg/present"
 )
 
 // initPlayground registers the WebSocket handler that runs programs for
 // static/js/play.js, if the playground is enabled.
 func initPlayground(origin *url.URL) {
-	if !present.PlayEnabled {
+	if !*play {
 		return
 	}
 	http.Handle("/socket", socket.NewHandler(origin))
-}
-
-func playable(c present.Code) bool {
-	return present.PlayEnabled && c.Play
 }

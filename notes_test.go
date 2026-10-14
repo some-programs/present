@@ -9,7 +9,7 @@ import (
 )
 
 func TestRenderNotes(t *testing.T) {
-	if err := initTemplates(embedFS, func(path string) string { return path }); err != nil {
+	if err := initTemplates(embedFS, func(path string) string { return path }, pageSettings{}); err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()

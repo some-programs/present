@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/benbjohnson/hashfs"
-	"github.com/some-programs/present/pkg/present"
 )
 
 // serveFlags holds the flags of the serve command, which the files that
@@ -32,11 +31,11 @@ var (
 	contentPath = serveFlags.String("content", ".", "base path for presentation content")
 	thankYou    = serveFlags.Bool("thankyou", false, "end slide presentations with a \"Thank you\" slide listing the authors")
 	noPreload   = serveFlags.Bool("no-preload", false, "disable preloading slide media (images and video)")
+	play        = serveFlags.Bool("play", true, "enable playground (permit execution of arbitrary user code)")
+	notes       = serveFlags.Bool("notes", false, "enable presenter notes (press 'N' from the browser to display them)")
 )
 
 func init() {
-	serveFlags.BoolVar(&present.PlayEnabled, "play", true, "enable playground (permit execution of arbitrary user code)")
-	serveFlags.BoolVar(&present.NotesEnabled, "notes", false, "enable presenter notes (press 'N' from the browser to display them)")
 	serveFlags.Usage = func() {
 		w := serveFlags.Output()
 		fmt.Fprintf(w, "usage: present serve [flags]\n\n")
@@ -126,10 +125,7 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		serveFlags.Usage()
 		return 2
 	}
-	if *noPreload {
-		present.PreloadEnabled = false
-	}
-	if *hot && present.NotesEnabled {
+	if *hot && *notes {
 		log.Fatal("-hot and -notes cannot be used together")
 	}
 
@@ -144,7 +140,13 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		}
 		return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
 	}
-	err := initTemplates(fsys, staticURL)
+	err := initTemplates(fsys, staticURL, pageSettings{
+		Play:     *play,
+		Notes:    *notes,
+		Preload:  !*noPreload,
+		ThankYou: *thankYou,
+		Hot:      *hot,
+	})
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %v", err)
 	}
@@ -194,12 +196,12 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	}
 	http.Handle("/static/", hashfs.FileServer(staticFS))
 
-	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && present.PlayEnabled {
+	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && *play {
 		log.Print(localhostWarning)
 	}
 
 	log.Printf("Open your web browser and visit %s", origin.String())
-	if present.NotesEnabled {
+	if *notes {
 		log.Println("Notes are enabled, press 'N' from the browser to display them.")
 	}
 	log.Print(http.Serve(ln, compressHandler(http.DefaultServeMux)))
