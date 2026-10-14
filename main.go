@@ -26,13 +26,13 @@ import (
 var serveFlags = flag.NewFlagSet("present serve", flag.ContinueOnError)
 
 var (
-	httpAddr    = serveFlags.String("http", "127.0.0.1:3999", "HTTP service address (e.g., '127.0.0.1:3999')")
-	originHost  = serveFlags.String("orighost", "", "host component of web origin URL (e.g., 'localhost')")
-	contentPath = serveFlags.String("content", ".", "base path for presentation content")
-	thankYou    = serveFlags.Bool("thankyou", false, "end slide presentations with a \"Thank you\" slide listing the authors")
-	noPreload   = serveFlags.Bool("no-preload", false, "disable preloading slide media (images and video)")
-	play        = serveFlags.Bool("play", true, "enable playground (permit execution of arbitrary user code)")
-	notes       = serveFlags.Bool("notes", false, "enable presenter notes (press 'N' from the browser to display them)")
+	httpAddrFlag    = serveFlags.String("http", "127.0.0.1:3999", "HTTP service address (e.g., '127.0.0.1:3999')")
+	originHostFlag  = serveFlags.String("orighost", "", "host component of web origin URL (e.g., 'localhost')")
+	contentPathFlag = serveFlags.String("content", ".", "base path for presentation content")
+	thankYouFlag    = serveFlags.Bool("thankyou", false, "end slide presentations with a \"Thank you\" slide listing the authors")
+	noPreloadFlag   = serveFlags.Bool("no-preload", false, "disable preloading slide media (images and video)")
+	playFlag        = serveFlags.Bool("play", true, "enable playground (permit execution of arbitrary user code)")
+	notesFlag       = serveFlags.Bool("notes", false, "enable presenter notes (press 'N' from the browser to display them)")
 )
 
 func init() {
@@ -125,7 +125,7 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		serveFlags.Usage()
 		return 2
 	}
-	if *hot && *notes {
+	if *hot && *notesFlag {
 		log.Fatal("-hot and -notes cannot be used together")
 	}
 
@@ -141,10 +141,10 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		return "/" + staticFS.HashName(strings.TrimPrefix(path, "/"))
 	}
 	err := initTemplates(fsys, staticURL, pageSettings{
-		Play:     *play,
-		Notes:    *notes,
-		Preload:  !*noPreload,
-		ThankYou: *thankYou,
+		Play:     *playFlag,
+		Notes:    *notesFlag,
+		Preload:  !*noPreloadFlag,
+		ThankYou: *thankYouFlag,
 		Hot:      *hot,
 	})
 	if err != nil {
@@ -155,7 +155,7 @@ func serve(args []string, stdout, stderr io.Writer) int {
 		log.Fatalf("Failed to load fonts: %v", err)
 	}
 
-	ln, err := net.Listen("tcp", *httpAddr)
+	ln, err := net.Listen("tcp", *httpAddrFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -167,25 +167,25 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	}
 
 	origin := &url.URL{Scheme: "http"}
-	if *originHost != "" {
-		if after, ok := strings.CutPrefix(*originHost, "https://"); ok {
-			*originHost = after
+	if *originHostFlag != "" {
+		if after, ok := strings.CutPrefix(*originHostFlag, "https://"); ok {
+			*originHostFlag = after
 			origin.Scheme = "https"
 		}
-		*originHost = strings.TrimPrefix(*originHost, "http://")
-		origin.Host = net.JoinHostPort(*originHost, port)
+		*originHostFlag = strings.TrimPrefix(*originHostFlag, "http://")
+		origin.Host = net.JoinHostPort(*originHostFlag, port)
 	} else if ln.Addr().(*net.TCPAddr).IP.IsUnspecified() {
 		name, _ := os.Hostname()
 		origin.Host = net.JoinHostPort(name, port)
 	} else {
-		reqHost, reqPort, err := net.SplitHostPort(*httpAddr)
+		reqHost, reqPort, err := net.SplitHostPort(*httpAddrFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if reqPort == "0" {
 			origin.Host = net.JoinHostPort(reqHost, port)
 		} else {
-			origin.Host = *httpAddr
+			origin.Host = *httpAddrFlag
 		}
 	}
 
@@ -196,12 +196,12 @@ func serve(args []string, stdout, stderr io.Writer) int {
 	}
 	http.Handle("/static/", hashfs.FileServer(staticFS))
 
-	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && *play {
+	if !ln.Addr().(*net.TCPAddr).IP.IsLoopback() && *playFlag {
 		log.Print(localhostWarning)
 	}
 
 	log.Printf("Open your web browser and visit %s", origin.String())
-	if *notes {
+	if *notesFlag {
 		log.Println("Notes are enabled, press 'N' from the browser to display them.")
 	}
 	log.Print(http.Serve(ln, compressHandler(http.DefaultServeMux)))

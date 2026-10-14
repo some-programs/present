@@ -97,7 +97,7 @@ func exportDocs(out string, files []string, source bool, stdout io.Writer) error
 	e := &exporter{files: dirRoot("."), out: out, source: source, stdout: stdout, copied: make(map[string]bool)}
 	staticURL := func(p string) string { return e.root + strings.TrimPrefix(p, "/") }
 	// Code cannot be run on the pages, and they have no presenter notes.
-	settings := pageSettings{Preload: true, InlineFonts: true, ThankYou: *thankYou}
+	settings := pageSettings{Preload: true, InlineFonts: true, ThankYou: *thankYouFlag}
 	if err := initTemplates(embedFS, staticURL, settings); err != nil {
 		return err
 	}

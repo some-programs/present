@@ -52,7 +52,7 @@ func dirRoot(dir string) contentRoot {
 // the file served at p in it.
 func contentFile(p string) (contentRoot, string) {
 	p = path.Clean("/" + p)
-	root := dirRoot(*contentPath)
+	root := dirRoot(*contentPathFlag)
 	if *showDoc && (p == examplesPath || strings.HasPrefix(p, examplesPath+"/")) {
 		root = examplesRoot
 	}

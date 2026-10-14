@@ -14,7 +14,7 @@ import (
 // initPlayground registers the WebSocket handler that runs programs for
 // static/js/play.js, if the playground is enabled.
 func initPlayground(origin *url.URL) {
-	if !*play {
+	if !*playFlag {
 		return
 	}
 	http.Handle("/socket", socket.NewHandler(origin))

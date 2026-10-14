@@ -14,9 +14,9 @@ import (
 
 // setContentPath sets *contentPath to dir for the duration of the test.
 func setContentPath(t *testing.T, dir string) {
-	old := *contentPath
-	*contentPath = dir
-	t.Cleanup(func() { *contentPath = old })
+	old := *contentPathFlag
+	*contentPathFlag = dir
+	t.Cleanup(func() { *contentPathFlag = old })
 }
 
 func writeFiles(t *testing.T, dir string, files map[string]string) {

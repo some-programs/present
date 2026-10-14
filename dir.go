@@ -32,7 +32,7 @@ func dirHandler(w http.ResponseWriter, r *http.Request) {
 	if isDoc(name) {
 		render := func(w io.Writer) error { return renderDoc(w, root, name, r.URL.Path) }
 		if r.URL.Query().Has("notes") {
-			if !*notes || path.Ext(name) != ".slide" {
+			if !*notesFlag || path.Ext(name) != ".slide" {
 				http.NotFound(w, r)
 				return
 			}
